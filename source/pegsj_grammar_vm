@@ -1,0 +1,75 @@
+/*
+	GenCS ASM Syntax
+	peg.js
+*/
+
+program
+= command+
+
+/* spaces */
+space = [ \n\b\t\r]+
+
+ospace = space*
+
+/* labels */
+label = v:[aA-zZ_] w:labelend* {return v+w.join("");}
+
+labelend
+ = v:[aA-zZ_0-9]
+
+/* numbers */
+integer = digits
+/ "-" d:digits {return -d;}
+/ "+" d:digits {return d;}
+
+
+digits
+= digits:[0-9]+ { return parseInt(digits.join(""), 10); }
+
+/* commands */
+zero_param_command
+= "halt"
+/ "add"
+/ "sub"
+/ "mul"
+/ "leq"
+
+one_param_command
+= "con"
+/ "peek"
+/ "poke"
+
+one_label_command
+= "jp"
+/ "cjp"
+
+command
+= c:instruction
+/ ospace l:label ":" c:instruction
+{
+	c["label"] = l;
+	return c;
+}
+
+
+
+instruction
+= ospace c:one_param_command space i:integer ospace 
+{
+	return {"command": c, "params": {"type": "integer", "value": [i]}, "length": 2};
+}
+
+/ ospace c:zero_param_command ospace
+{
+	return {"command": c, "params": {"type": "integer", "value": []}, "length": 1};
+}
+
+/ ospace c:one_label_command space l:label ospace 
+{
+	return {"command": c, "params": {"type": "label", "value": [l]}, "length": 2}
+}
+
+/ ospace c:one_label_command space i:integer ospace 
+{
+	return {"command": c, "params": {"type": "relative", "value": [i]}, "length": 2}
+}
