@@ -1,6 +1,8 @@
 <html>
  <head>
    <link rel="stylesheet" href="css/VMCompiler.css" />
+   <title>VM Compiler</title>
+   <script src="js/VMC.js"></script>
    <script src="js/VMCompiler.js"></script>
    <script src="js/init.js"></script>
  </head>
@@ -89,9 +91,10 @@
               <tr><td><b>sub</b></td><td>pop(a), pop(b), push( a - b )</td></tr>
               <tr><td><b>mul</b></td><td>pop(a), pop(b), push( a * b )</td></tr>
               <tr><td><b>leq</b></td><td>pop(a), pop(b). push( a&lt;=b? 1 : 0 )</td></tr>
-              <tr><td><b>jp x</b></td><td>Jump x tokens( not lines )</td></tr>
-              <tr><td><b>cjp x</b></td><td>Jump x tokens if pop(a), a == 0</td></tr>
+              <tr><td><b>jp x</b></td><td>Jump x tokens( not lines ) or to a certain label. </td></tr>
+              <tr><td><b>cjp x</b></td><td>Jump x tokens or to a certain label if pop(a), a == 0</td></tr>
               <tr><td><b>halt</b></td><td>Stops the execution</td></tr>
+              <tr><td><b>labelName: command</b></td><td>Adds a label with the specefied name at the specefied position. Labels consist of letters, numbers, $ and _ . The may not start with a number. </td></tr>
             </table>
           </div>
           <div class="container">
@@ -105,7 +108,7 @@ for( int i=0; i&lt;n; ++i ){
   sum = sum + i * 2 ^ i;
 }
             </pre>
-            And sthe solution for this would be:
+            And the solution for this would be:
             <pre>
 con 1
 add
@@ -134,6 +137,36 @@ poke 0
 jp -38 
 halt
             </pre>
+            Notice the cjp 35 and jp -38 up there? Counting is pretty annoying. So here is it with labels and some more formatting: 
+            <pre>
+con 1
+add
+con 0 
+con 1
+con 2
+loop: peek 0 con 1 leq cjp end
+	peek 3
+	peek 2
+	mul
+	peek 1
+	add
+	poke 1
+	peek 2
+	con 1
+	add
+	poke 2
+	peek 3
+	con 2
+	mul
+	poke 3
+	con 1 
+	peek 0
+	sub
+	poke 0
+	jp loop 
+end: halt
+            </pre>
+
           </div>
           <div class="container">
             This little app has been developed by 
@@ -147,6 +180,8 @@ halt
               If you have any bugs to report of stuff like that,
               just <a href="mailto:steven.mirea@gmail.com">send me an email</a>!<br />
               <br />
+              Me, Tom Wiesing improved this to add some labels and better error messages. <br />
+	      <br />
               Happy coding!
           </div>
         </div>
@@ -182,7 +217,8 @@ halt
    </div>
    
    <div id="footer">
-      <a href="mailto:steven.mirea@gmail.com" title="Bugs, comments, suggestions go to this dude">Developed by Stefan Mirea</a>
+      <a href="mailto:steven.mirea@gmail.com" title="Bugs, comments, suggestions go to this dude">Developed by Stefan Mirea</a>; 
+      <a href="mailto:t.wiesing@jacobs-university.de">improved by Tom Wiesing</a>
    </div>
  </body>
  

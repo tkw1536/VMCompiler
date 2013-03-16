@@ -1,4 +1,18 @@
 var VMCompiler = (function(){
+
+
+	var CompileLabels = function(code){
+		try{
+			return VMC(code);
+		} catch(e){
+			if(e.hasOwnProperty("line")){
+				alert("Error compiling code: \n"+e.message+ "\n(Line "+e.line.toString()+", Column "+e.offset.toString()+")");
+			} else {
+				alert("Error compiling code: \n"+e.message);
+			}
+			throw e;		
+		}
+	}
 	
 	return function( ids ){
 		
@@ -40,7 +54,7 @@ var VMCompiler = (function(){
 		
 
 		this.evaluate = function( code ){
-			code = code ? code : com.textarea.value;
+			code = code ? code : CompileLabels(com.textarea.value);
 			code = code.replace(/\s+/gi, ' ').replace(/^\s|\s$/g, '').toLowerCase();
 			
 			return code;
@@ -135,7 +149,7 @@ var VMCompiler = (function(){
 				
 				/** -End Helper Functions- **/
 				
-				var str = com.textarea.value;
+				var str = CompileLabels(com.textarea.value);
 				str = str.replace( /\s\s+/g, ' ' )
 							.replace( /([a-zA-Z]+)\s+(\-?[0-9]+)/g, "$1 $2\n" )
 							.replace( /([a-zA-Z]+)\s+([a-zA-Z])/g, "$1\n$2" )
