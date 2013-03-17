@@ -59,9 +59,15 @@ var VMCompiler = (function(){
 				com.textarea.readOnly = false;
 			} else {
 				restore = com.textarea.value;
-				com.textarea.value = CompileLabels( restore );
-				getEl( ids.compileButton ).value = "Restore (relabelize)";
-				com.textarea.readOnly = true;
+				try{
+					com.textarea.value = CompileLabels( restore );
+					getEl( ids.compileButton ).value = "Restore (relabelize)";
+					com.textarea.readOnly = true;
+				} catch(e){
+					throw e;
+					restore = false;
+				}
+				
 			}
 		};
 		getEl( ids.sseButton ).onclick = function(){ com.self.compile( true ); };
