@@ -240,6 +240,7 @@ var VMCompiler = (function(){
 					com.stackEvolution.appendChild( com.stack.print( com.stack.getValues() ) );
 					PCArray.push( PC );
 					if( ++i >= breakPoint ) {
+						alert("Runtime error: Too many instructions... maybe infinite loop. Exceeded: "+breakPoint+" instructions. ");
 						M('Too many instructions... maybe infinite loop. Exceeded: '+breakPoint+' instructions', 'error');
 						break;
 					}
@@ -272,6 +273,7 @@ var VMCompiler = (function(){
 			function pop( n ){
 				n = n !== undefined ? n : cStack.children.length - 1;
 				if( n > cStack.children.length-1 ){
+					alert("Runtime error: Index out of bounds. ");
 					M('Index out of bounds', 'warn');
 					return null;
 				}
@@ -285,6 +287,7 @@ var VMCompiler = (function(){
 		/** VM Procedures **/
 		this.peek = function(n){
 			if( n > cStack.children.length-1 ){
+				alert("Runtime error: Index out of bounds. ");
 				M('Index out of bounds', 'warn');
 				return null;
 			}
@@ -310,6 +313,7 @@ var VMCompiler = (function(){
 		
 		this.add = function(){
 			if( cStack.children.length < 2 ){
+				alert("Runtime error: Not enough elements in stack. ");
 				M('Not enough elements in stack', 'warn');
 				return null;
 			}
@@ -323,6 +327,7 @@ var VMCompiler = (function(){
 		
 		this.sub = function(){
 			if( cStack.children.length < 2 ){
+				alert("Runtime error: Not enough elements in stack. ");
 				M('Not enough elements in stack', 'warn');
 				return null;
 			}
@@ -336,6 +341,7 @@ var VMCompiler = (function(){
 		
 		this.mul = function(){
 			if( cStack.children.length < 2 ){
+				alert("Runtime error: Not enough elements in stack. ");
 				M('Not enough elements in stack', 'warn');
 				return null;
 			}
@@ -349,6 +355,7 @@ var VMCompiler = (function(){
 		
 		this.leq = function(){
 			if( cStack.children.length < 2 ){
+				alert("Runtime error: Not enough elements in stack. ");
 				M('Not enough elements in stack', 'warn');
 				return null;
 			}
@@ -360,6 +367,7 @@ var VMCompiler = (function(){
 		
 		this.jp = function(n){
 			if(PC + n < 0 || PC + n >= cInstr.length){
+				alert("Runtime error: Jump index out of bounds. ");
 				M('Jump index out of bounds', 'warn');
 				return null;
 			}
@@ -385,10 +393,15 @@ var VMCompiler = (function(){
 		this.proc = function( a, b ){
 			a = Number( a );
 			b = Number( b );
-			if( isNaN(a) || a < 1 ) M('There must be at least one argument for the function', 'warn');
-			if( isNaN(b) || b < 4 ) M('The function can\'t have less than 4 tokens', 'warn');
+			if( isNaN(b) || b < 4 ){
+				alert("Runtime error: The function can't have less than 4 tokens. ");
+				M('The function can\'t have less than 4 tokens', 'warn');
+			}
 			if( runProc ) {
-				//DO STUFF
+				if(cStack.length < a){
+					alert("Runtime error: Not enough elements on stack. ");
+					return null;
+				}
 				push(a); //argument number
 				push(framepointer); //old framepointer
 				push(ret); //return adress
@@ -413,6 +426,11 @@ var VMCompiler = (function(){
 			
 			var fp = framepointer; //get the frampointer
 			PC = pop(fp--); //jump back
+			if(isNaN(PC)){
+				alert("Runtime Error: Frame has been destroyed. ");
+				M('Frame has been destroyed', 'warn');
+				return null;		
+			}
 			framepointer = pop(fp--); //old framepointer
 			var l = pop(fp--); //length
 			for(var i=0;i<l;i++){
@@ -424,6 +442,12 @@ var VMCompiler = (function(){
 		}
 
 		this.arg = function(a){
+			var count = val(get(framepointer-2));
+			if(a <= 0 || a > count){
+				alert("Runtime error: Invalid argument number. ");
+				M('Invalid argument number', 'warn');
+				return null;
+			}
 			push(val(get(framepointer-2-a))); //get the specefied argument
 			//TODO: Check for size
 			PC += 2;
