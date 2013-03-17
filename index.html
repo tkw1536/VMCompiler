@@ -57,7 +57,7 @@
     <div id="main">
       <div id="description">
         <h3>
-          VM Compiler
+          VM (P) Compiler
         </h3>
         <div id="menu">
           <span style="display:inline-block;width:10px;"></span>
@@ -69,7 +69,7 @@
             <a href="javascript:void(0)" class="link">About</a>
           </span>
           <div class="container">
-            Welcome to the VM Compiler.<br />
+            Welcome to the VM (P) Compiler.<br />
             You can use the tabs above to find out some useful info &amp; examples
             on how to use the compiler
           </div>
@@ -93,6 +93,11 @@
               <tr><td><b>leq</b></td><td>pop(a), pop(b). push( a&lt;=b? 1 : 0 )</td></tr>
               <tr><td><b>jp x</b></td><td>Jump x tokens( not lines ) or to a certain label. </td></tr>
               <tr><td><b>cjp x</b></td><td>Jump x tokens or to a certain label if pop(a), a == 0</td></tr>
+              <tr><td><b>proc a l</b></td><td>Contains information about the number a of arguments and the length l of the procedure in the number of words needed to store it. The command proc a l simply jumps l words ahead (l may also be a label). 
+</td></tr>
+              <tr><td><b>arg i</b></td><td>Pushes the ith argument from the current frame to the stack</td></tr>
+              <tr><td><b>call p</b></td><td>pushes the current program address (opens a new frame), and jumps to the
+program address p. p may also be a label. </td></tr>
               <tr><td><b>halt</b></td><td>Stops the execution</td></tr>
               <tr><td><b>labelName: command</b></td><td>Adds a label with the name labelName at the current position. Labels consist of letters, numbers, $ and _ . They may not start with a number. </td></tr>
             </table>
@@ -180,7 +185,7 @@ end: halt
               If you have any bugs to report of stuff like that,
               just <a href="mailto:steven.mirea@gmail.com">send me an email</a>!<br />
               <br />
-              Me, Tom Wiesing improved this to add labels and better error messages. <br />
+              Me, Tom Wiesing, improved this to add labels and better error messages. I also added procedures. <br />
 	      <br />
               Happy coding!
           </div>
@@ -206,7 +211,8 @@ end: halt
         </tr>
         <tr>
           <td id="actionHolder" colspan="3" align="center">
-              <input type="button" value="Compile" id="VMC_Start" />
+              <input type="button" value="Compile (delabelize)" id="VMC_Compile" />
+              <input type="button" value="Execute" id="VMC_Start" />
               <input type="button" value="Step-by-Step Execution" id="VMC_SSE" />
           </td>
         </tr>

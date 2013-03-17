@@ -3,6 +3,7 @@ window.onload = function(){
   var VMC = new VMCompiler( {
     textarea             : 'VMC_textarea', 
     stackHolder          : 'VMC_stackHolder', 
+    compileButton	 : 'VMC_Compile',
     startButton          : 'VMC_Start',
     sseButton            : 'VMC_SSE',
     stackEvolution       : 'VMC_stackEvolution',

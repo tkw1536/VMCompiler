@@ -48,6 +48,8 @@ Parser = (function(){
         "zero_param_command": parse_zero_param_command,
         "one_param_command": parse_one_param_command,
         "one_label_command": parse_one_label_command,
+        "one_abs_label_command": parse_one_abs_label_command,
+        "one_mixed_command": parse_one_mixed_command,
         "command": parse_command,
         "instruction": parse_instruction
       };
@@ -383,6 +385,17 @@ Parser = (function(){
                     matchFailed("\"leq\"");
                   }
                 }
+                if (result0 === null) {
+                  if (input.substr(pos, 6) === "return") {
+                    result0 = "return";
+                    pos += 6;
+                  } else {
+                    result0 = null;
+                    if (reportFailures === 0) {
+                      matchFailed("\"return\"");
+                    }
+                  }
+                }
               }
             }
           }
@@ -422,6 +435,17 @@ Parser = (function(){
                 matchFailed("\"poke\"");
               }
             }
+            if (result0 === null) {
+              if (input.substr(pos, 3) === "arg") {
+                result0 = "arg";
+                pos += 3;
+              } else {
+                result0 = null;
+                if (reportFailures === 0) {
+                  matchFailed("\"arg\"");
+                }
+              }
+            }
           }
         }
         return result0;
@@ -448,6 +472,36 @@ Parser = (function(){
             if (reportFailures === 0) {
               matchFailed("\"cjp\"");
             }
+          }
+        }
+        return result0;
+      }
+      
+      function parse_one_abs_label_command() {
+        var result0;
+        
+        if (input.substr(pos, 4) === "call") {
+          result0 = "call";
+          pos += 4;
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\"call\"");
+          }
+        }
+        return result0;
+      }
+      
+      function parse_one_mixed_command() {
+        var result0;
+        
+        if (input.substr(pos, 4) === "proc") {
+          result0 = "proc";
+          pos += 4;
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\"proc\"");
           }
         }
         return result0;
@@ -508,7 +562,7 @@ Parser = (function(){
       }
       
       function parse_instruction() {
-        var result0, result1, result2, result3, result4;
+        var result0, result1, result2, result3, result4, result5;
         var pos0, pos1;
         
         pos0 = pos;
@@ -587,7 +641,7 @@ Parser = (function(){
             pos1 = pos;
             result0 = parse_ospace();
             if (result0 !== null) {
-              result1 = parse_one_label_command();
+              result1 = parse_one_abs_label_command();
               if (result1 !== null) {
                 result2 = parse_space();
                 if (result2 !== null) {
@@ -618,7 +672,7 @@ Parser = (function(){
             }
             if (result0 !== null) {
               result0 = (function(offset, c, l) {
-            	return {"command": c, "params": {"type": "label", "value": [l]}, "length": 2}
+            	return {"command": c, "params": {"type": "labelabs", "value": [l]}, "length": 2}
             })(pos0, result0[1], result0[3]);
             }
             if (result0 === null) {
@@ -629,7 +683,7 @@ Parser = (function(){
               pos1 = pos;
               result0 = parse_ospace();
               if (result0 !== null) {
-                result1 = parse_one_label_command();
+                result1 = parse_one_abs_label_command();
                 if (result1 !== null) {
                   result2 = parse_space();
                   if (result2 !== null) {
@@ -660,11 +714,195 @@ Parser = (function(){
               }
               if (result0 !== null) {
                 result0 = (function(offset, c, i) {
-              	return {"command": c, "params": {"type": "relative", "value": [i]}, "length": 2}
+              	return {"command": c, "params": {"type": "absolute", "value": [i]}, "length": 2}
               })(pos0, result0[1], result0[3]);
               }
               if (result0 === null) {
                 pos = pos0;
+              }
+              if (result0 === null) {
+                pos0 = pos;
+                pos1 = pos;
+                result0 = parse_ospace();
+                if (result0 !== null) {
+                  result1 = parse_one_label_command();
+                  if (result1 !== null) {
+                    result2 = parse_space();
+                    if (result2 !== null) {
+                      result3 = parse_label();
+                      if (result3 !== null) {
+                        result4 = parse_ospace();
+                        if (result4 !== null) {
+                          result0 = [result0, result1, result2, result3, result4];
+                        } else {
+                          result0 = null;
+                          pos = pos1;
+                        }
+                      } else {
+                        result0 = null;
+                        pos = pos1;
+                      }
+                    } else {
+                      result0 = null;
+                      pos = pos1;
+                    }
+                  } else {
+                    result0 = null;
+                    pos = pos1;
+                  }
+                } else {
+                  result0 = null;
+                  pos = pos1;
+                }
+                if (result0 !== null) {
+                  result0 = (function(offset, c, l) {
+                	return {"command": c, "params": {"type": "label", "value": [l]}, "length": 2}
+                })(pos0, result0[1], result0[3]);
+                }
+                if (result0 === null) {
+                  pos = pos0;
+                }
+                if (result0 === null) {
+                  pos0 = pos;
+                  pos1 = pos;
+                  result0 = parse_ospace();
+                  if (result0 !== null) {
+                    result1 = parse_one_label_command();
+                    if (result1 !== null) {
+                      result2 = parse_space();
+                      if (result2 !== null) {
+                        result3 = parse_integer();
+                        if (result3 !== null) {
+                          result4 = parse_ospace();
+                          if (result4 !== null) {
+                            result0 = [result0, result1, result2, result3, result4];
+                          } else {
+                            result0 = null;
+                            pos = pos1;
+                          }
+                        } else {
+                          result0 = null;
+                          pos = pos1;
+                        }
+                      } else {
+                        result0 = null;
+                        pos = pos1;
+                      }
+                    } else {
+                      result0 = null;
+                      pos = pos1;
+                    }
+                  } else {
+                    result0 = null;
+                    pos = pos1;
+                  }
+                  if (result0 !== null) {
+                    result0 = (function(offset, c, i) {
+                  	return {"command": c, "params": {"type": "relative", "value": [i]}, "length": 2}
+                  })(pos0, result0[1], result0[3]);
+                  }
+                  if (result0 === null) {
+                    pos = pos0;
+                  }
+                  if (result0 === null) {
+                    pos0 = pos;
+                    pos1 = pos;
+                    result0 = parse_ospace();
+                    if (result0 !== null) {
+                      result1 = parse_one_mixed_command();
+                      if (result1 !== null) {
+                        result2 = parse_space();
+                        if (result2 !== null) {
+                          result3 = parse_integer();
+                          if (result3 !== null) {
+                            result4 = parse_space();
+                            if (result4 !== null) {
+                              result5 = parse_integer();
+                              if (result5 !== null) {
+                                result0 = [result0, result1, result2, result3, result4, result5];
+                              } else {
+                                result0 = null;
+                                pos = pos1;
+                              }
+                            } else {
+                              result0 = null;
+                              pos = pos1;
+                            }
+                          } else {
+                            result0 = null;
+                            pos = pos1;
+                          }
+                        } else {
+                          result0 = null;
+                          pos = pos1;
+                        }
+                      } else {
+                        result0 = null;
+                        pos = pos1;
+                      }
+                    } else {
+                      result0 = null;
+                      pos = pos1;
+                    }
+                    if (result0 !== null) {
+                      result0 = (function(offset, c, i, j) {
+                    	return {"command": c, "params": {"type": "relative2", "value": [i, j]}, "length": 3}
+                    })(pos0, result0[1], result0[3], result0[5]);
+                    }
+                    if (result0 === null) {
+                      pos = pos0;
+                    }
+                    if (result0 === null) {
+                      pos0 = pos;
+                      pos1 = pos;
+                      result0 = parse_ospace();
+                      if (result0 !== null) {
+                        result1 = parse_one_mixed_command();
+                        if (result1 !== null) {
+                          result2 = parse_space();
+                          if (result2 !== null) {
+                            result3 = parse_integer();
+                            if (result3 !== null) {
+                              result4 = parse_space();
+                              if (result4 !== null) {
+                                result5 = parse_label();
+                                if (result5 !== null) {
+                                  result0 = [result0, result1, result2, result3, result4, result5];
+                                } else {
+                                  result0 = null;
+                                  pos = pos1;
+                                }
+                              } else {
+                                result0 = null;
+                                pos = pos1;
+                              }
+                            } else {
+                              result0 = null;
+                              pos = pos1;
+                            }
+                          } else {
+                            result0 = null;
+                            pos = pos1;
+                          }
+                        } else {
+                          result0 = null;
+                          pos = pos1;
+                        }
+                      } else {
+                        result0 = null;
+                        pos = pos1;
+                      }
+                      if (result0 !== null) {
+                        result0 = (function(offset, c, i, j) {
+                      	return {"command": c, "params": {"type": "label2", "value": [i, j]}, "length": 3}
+                      })(pos0, result0[1], result0[3], result0[5]);
+                      }
+                      if (result0 === null) {
+                        pos = pos0;
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -740,7 +978,7 @@ Parser = (function(){
        *
        *   - |result === null|
        *   - |pos === 0|
-       *   - |rightmostFailuresExpected| contains at least one failureUncaught
+       *   - |rightmostFailuresExpected| contains at least one failure
        *
        * All code following this comment (including called functions) must
        * handle these states.
@@ -832,6 +1070,30 @@ Parser = (function(){
 				if(labels.hasOwnProperty(label)){
 					command.params.type = "absolute";
 					command.params.value[0] = labels[label]-command["pos"]; //jump to the label at position
+				} else {
+					throw {"message": "Undefined label '"+label+"'", "id": label};	
+				}
+				command.params.type = "absolute";
+		
+			}
+
+			else if(command.params.type == "label2"){
+				var label = command.params.value[1];
+				if(labels.hasOwnProperty(label)){
+					command.params.type = "absolute";
+					command.params.value[1] = labels[label]-command["pos"]; //jump to the label at position
+				} else {
+					throw {"message": "Undefined label '"+label+"'", "id": label};	
+				}
+				command.params.type = "absolute";
+		
+			}
+			
+			else if(command.params.type == "labelabs"){
+				var label = command.params.value[0];
+				if(labels.hasOwnProperty(label)){
+					command.params.type = "absolute";
+					command.params.value[0] = labels[label]; //jump to the label at position
 				} else {
 					throw {"message": "Undefined label '"+label+"'", "id": label};	
 				}

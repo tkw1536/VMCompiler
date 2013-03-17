@@ -2,6 +2,7 @@ var VMCompiler = (function(){
 
 
 	var CompileLabels = function(code){
+		code = code.split(",").join(""); //ignore commas
 		try{
 			return VMC(code);
 		} catch(e){
@@ -20,7 +21,12 @@ var VMCompiler = (function(){
 		var PCArray		= [];
 		var cInstr		= null;
 		var breakPoint	= 500;
-		var runProc		= false;
+		var runProc		= false; //are we running proc?
+		var ret 		= -1;
+		var framepointer	= -1; //frame pointer(s) (we need to store all the old ones also)
+		var restore = false;
+		
+		
 		
 		var cls = {
 			codeToken		: 'SSE-code-token',
@@ -45,6 +51,19 @@ var VMCompiler = (function(){
 		
 		getEl( ids.stackHolder ).appendChild( cStack );
 		getEl( ids.startButton ).onclick = function(){ com.self.compile( ); };
+		getEl( ids.compileButton ).onclick = function(){ 
+			if(typeof restore == 'string'){
+				com.textarea.value = restore;
+				restore = false;
+				getEl( ids.compileButton ).value = "Compile (delabelize)";
+				com.textarea.readOnly = false;
+			} else {
+				restore = com.textarea.value;
+				com.textarea.value = CompileLabels( restore );
+				getEl( ids.compileButton ).value = "Restore (relabelize)";
+				com.textarea.readOnly = true;
+			}
+		};
 		getEl( ids.sseButton ).onclick = function(){ com.self.compile( true ); };
 		getEl( ids.sseClose ).onclick = function(){ 
 			com.sse.main.style.display = 'none'; 
@@ -56,7 +75,6 @@ var VMCompiler = (function(){
 		this.evaluate = function( code ){
 			code = code ? code : CompileLabels(com.textarea.value);
 			code = code.replace(/\s+/gi, ' ').replace(/^\s|\s$/g, '').toLowerCase();
-			
 			return code;
 		}
 		
@@ -70,6 +88,11 @@ var VMCompiler = (function(){
 			var a		= this.getArray();
 			cInstr 	= a;
 			
+
+			framepointer		= -1;
+			runProc			= false;
+			ret 			= -1;
+
 			PC 			= 0;
 			PCArray		= [];
 			breakPoint	= Number(getEl( ids.optMaxInstructions ).value);
@@ -101,7 +124,7 @@ var VMCompiler = (function(){
 					if( PCArray.length > 0 ) removeClass( tokens[ PCArray[PCArray.length-1] ], cls.currentToken );
 					addClass( tokens[ PC ], cls.currentToken );
 					PCArray.push( PC );
-					if( !com.self[a[PC]](a[PC+1]) ) {
+					if( !com.self[a[PC]](a[PC+1], a[PC+2]) ) {
 					   M('Program halted due to errors!', 'warn');
 					   return;
 					}
@@ -116,7 +139,7 @@ var VMCompiler = (function(){
 					}
 					
 					var ind = com.sse.evolution.children.length-1;
-					com.sse.evolution.removeChild( com.sse.evolution.children[ ind ] );
+					com.ssframepointere.evolution.removeChild( com.sse.evolution.children[ ind ] );
 					var values = eval( com.sse.evolution.children[ ind-1 ].getAttribute( 'values' ) );
 
 					com.sse.stack.innerHTML = '';
@@ -150,12 +173,14 @@ var VMCompiler = (function(){
 				/** -End Helper Functions- **/
 				
 				var str = CompileLabels(com.textarea.value);
+				/* DONE by CompileLabels			
 				str = str.replace( /\s\s+/g, ' ' )
 							.replace( /([a-zA-Z]+)\s+(\-?[0-9]+)/g, "$1 $2\n" )
 							.replace( /([a-zA-Z]+)\s+([a-zA-Z])/g, "$1\n$2" )
 							.replace( /[ ]+([a-zA-Z]+)/g, "$1" )
 							.replace( /(\s)\s+/g, "$1")
 							.replace( /^\s+|\s+$/g, '');
+				*/
 				var code 	= element('div');
 				var arr 		= str.split("\n");
 				var c 		= 0;
@@ -167,7 +192,6 @@ var VMCompiler = (function(){
 						var tmp = element('span', {'className':cls.codeToken, 'id':'token_'+c}, t[j]);
 						tokens.push( tmp );
 						code.appendChild( tmp );
-						code.append
 						++c;
 					}
 					code.appendChild( element('br') );
@@ -348,22 +372,60 @@ var VMCompiler = (function(){
 		this.halt = function(){
 			PC = -1;
 		}
-		
-		/**
-		 * Not implemented yet!
-		**/
+
+		//procedures
+
+
 		this.proc = function( a, b ){
 			a = Number( a );
 			b = Number( b );
 			if( isNaN(a) || a < 1 ) M('There must be at least one argument for the function', 'warn');
 			if( isNaN(b) || b < 4 ) M('The function can\'t have less than 4 tokens', 'warn');
 			if( runProc ) {
+				//DO STUFF
+				push(framepointer); //old framepointer
+				push(a); //argument number
+				push(ret); //return adress
 				
-				
-				
+				framepointer = cStack.children.length - 1; //framepointer
+				PC += 3; //jump to function body
 				runProc = false;
-			} else this.jump( b );
+			} else {
+				this.jp(b); //jump over function body
+			}
+			return this;
 		}
+
+		this.call = function(a){
+			ret = PC+2; //Return adress
+			PC = a;
+			runProc = true;//Ok we jumped to the function
+			return this;
+		}
+
+		this["return"] = function(){
+			
+			var fp = framepointer; //get the frampointer
+			PC = pop(fp--); //jump back
+			var l = pop(fp--); //length
+			framepointer = pop(fp--); //old framepointer
+			console.log("Hello");
+			console.log(framepointer);
+			for(var i=0;i<l;i++){
+				pop(fp--);
+			}
+			
+			
+			return this;
+		}
+
+		this.arg = function(a){
+			push(val(get(framepointer-2-a))); //get the specefied argument
+			//TODO: Check for size
+			PC += 2;
+			return this;
+		}
+
 	};
 	
 })();

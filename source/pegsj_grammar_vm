@@ -1,5 +1,5 @@
 /*
-	GenCS ASM Syntax
+	GenCS VM Syntax
 	peg.js
 */
 
@@ -33,15 +33,23 @@ zero_param_command
 / "sub"
 / "mul"
 / "leq"
+/ "return"
 
 one_param_command
 = "con"
 / "peek"
 / "poke"
+/ "arg"
 
 one_label_command
 = "jp"
 / "cjp"
+
+one_abs_label_command
+= "call"
+
+one_mixed_command
+= "proc"
 
 command
 = c:instruction
@@ -64,6 +72,16 @@ instruction
 	return {"command": c, "params": {"type": "integer", "value": []}, "length": 1};
 }
 
+/ ospace c:one_abs_label_command space l:label ospace 
+{
+	return {"command": c, "params": {"type": "labelabs", "value": [l]}, "length": 2}
+}
+
+/ ospace c:one_abs_label_command space i:integer ospace 
+{
+	return {"command": c, "params": {"type": "absolute", "value": [i]}, "length": 2}
+}
+
 / ospace c:one_label_command space l:label ospace 
 {
 	return {"command": c, "params": {"type": "label", "value": [l]}, "length": 2}
@@ -72,4 +90,14 @@ instruction
 / ospace c:one_label_command space i:integer ospace 
 {
 	return {"command": c, "params": {"type": "relative", "value": [i]}, "length": 2}
+}
+
+/ ospace c:one_mixed_command space i:integer space j:integer 
+{
+	return {"command": c, "params": {"type": "relative2", "value": [i, j]}, "length": 3}
+}
+
+/ ospace c:one_mixed_command space i:integer space j:label 
+{
+	return {"command": c, "params": {"type": "label2", "value": [i, j]}, "length": 3}
 }
