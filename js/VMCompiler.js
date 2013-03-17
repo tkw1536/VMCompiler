@@ -64,8 +64,8 @@ var VMCompiler = (function(){
 					getEl( ids.compileButton ).value = "Restore (relabelize)";
 					com.textarea.readOnly = true;
 				} catch(e){
-					throw e;
 					restore = false;
+					throw e;
 				}
 				
 			}
