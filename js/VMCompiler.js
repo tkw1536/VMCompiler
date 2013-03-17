@@ -130,7 +130,7 @@ var VMCompiler = (function(){
 					if( PCArray.length > 0 ) removeClass( tokens[ PCArray[PCArray.length-1] ], cls.currentToken );
 					addClass( tokens[ PC ], cls.currentToken );
 					PCArray.push( PC );
-					if( !com.self[a[PC]](a[PC+1], a[PC+2]) ) {
+					if( !com.self[a[PC]](a[PC+1], a[PC+2], a) ) {
 					   M('Program halted due to errors!', 'warn');
 					   return;
 					}
@@ -233,7 +233,7 @@ var VMCompiler = (function(){
 			
 				var i = 0;
 				while( PC < a.length && PC >= 0 ){
-					if( !this[a[PC]](a[PC+1], a[PC+2]) ) {
+					if( !this[a[PC]](a[PC+1], a[PC+2], a) ) {
 					   M('Program halted due to errors!', 'warn');
 					   break;
 					}
@@ -389,8 +389,8 @@ var VMCompiler = (function(){
 			if( isNaN(b) || b < 4 ) M('The function can\'t have less than 4 tokens', 'warn');
 			if( runProc ) {
 				//DO STUFF
-				push(framepointer); //old framepointer
 				push(a); //argument number
+				push(framepointer); //old framepointer
 				push(ret); //return adress
 				
 				framepointer = cStack.children.length - 1; //framepointer
@@ -402,21 +402,19 @@ var VMCompiler = (function(){
 			return this;
 		}
 
-		this.call = function(a){
+		this.call = function(a, b, pgr){
 			ret = PC+2; //Return adress
 			PC = a;
 			runProc = true;//Ok we jumped to the function
-			return this;
+			return this.proc(pgr[PC+1], pgr[PC+2], pgr); //run the procedure
 		}
 
 		this["return"] = function(){
 			
 			var fp = framepointer; //get the frampointer
 			PC = pop(fp--); //jump back
-			var l = pop(fp--); //length
 			framepointer = pop(fp--); //old framepointer
-			console.log("Hello");
-			console.log(framepointer);
+			var l = pop(fp--); //length
 			for(var i=0;i<l;i++){
 				pop(fp--);
 			}
