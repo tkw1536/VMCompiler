@@ -99,6 +99,7 @@
               <tr><td><b>arg i</b></td><td>Pushes the ith argument from the current frame to the stack</td></tr>
               <tr><td><b>call p</b></td><td>pushes the current program address (opens a new frame), and jumps to the
 program address p. p may also be a label. </td></tr>
+              <tr><td><b>return</b></td><td>Takes the current frame from the stack, jumps to previous program address. </td></tr>
               <tr><td><b>halt</b></td><td>Stops the execution</td></tr>
               <tr><td><b>labelName: command</b></td><td>Adds a label with the name labelName at the current position. Labels consist of letters, numbers, $ and _ . They may not start with a number. </td></tr>
             </table>
