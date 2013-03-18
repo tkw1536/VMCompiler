@@ -144,34 +144,53 @@ poke 0
 jp -38 
 halt
             </pre>
-            Notice the cjp 35 and jp -38 up there? Counting is pretty annoying. So here is it with labels and some more formatting: 
+            Here is another example which computes if a number is odd or even. In the last line it computes if 50 is even. The algorithm (in SML) is: 
             <pre>
-con 1
-add
-con 0 
-con 1
-con 2
-loop: peek 0 con 1 leq cjp end
-	peek 3
-	peek 2
-	mul
-	peek 1
-	add
-	poke 1
-	peek 2
-	con 1
-	add
-	poke 2
-	peek 3
-	con 2
-	mul
-	poke 3
-	con 1 
-	peek 0
-	sub
-	poke 0
-	jp loop 
-end: halt
+fun even(0) = 1
+|   even(1) = 0
+|   even(n) = odd(n-1)
+and odd(0)  = 0
+|   odd(1)  = 1
+|   odd(n)  = even(n-1);
+
+even(50);
+            </pre>
+Here is the code in L(VMP). It may take a while to run (because of the many recursions). 
+            <pre>
+even: proc 1 odd
+    arg 1
+    cjp even0
+    con 1
+    arg 1
+    sub
+    cjp even1
+    con 1
+    arg 1
+    sub
+    call odd
+    return
+    even0: con 1 return
+    even1: con 0 return
+
+odd: proc 1 end
+    arg 1
+    cjp odd0
+    con 1
+    arg 1
+    sub
+    cjp odd1
+    con 1
+    arg 1
+    sub
+    call even
+    return
+    odd0: con 0 return
+    odd1: con 1 return     
+
+end: 
+    con 50
+    call even
+    halt
             </pre>
 
           </div>
