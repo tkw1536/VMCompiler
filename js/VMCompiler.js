@@ -24,6 +24,7 @@ var VMCompiler = (function(){
 		var runProc		= false; //are we running proc?
 		var ret 		= -1;
 		var framepointer	= -1; //frame pointer(s) (we need to store all the old ones also)
+		var FPArray		= [];
 		var restore = false;
 		
 		
@@ -96,6 +97,8 @@ var VMCompiler = (function(){
 			
 
 			framepointer		= -1;
+			FPArray		= [];
+
 			runProc			= false;
 			ret 			= -1;
 
@@ -130,12 +133,14 @@ var VMCompiler = (function(){
 					if( PCArray.length > 0 ) removeClass( tokens[ PCArray[PCArray.length-1] ], cls.currentToken );
 					addClass( tokens[ PC ], cls.currentToken );
 					PCArray.push( PC );
+					FPArray.push ( framepointer );
 					if( !com.self[a[PC]](a[PC+1], a[PC+2], a) ) {
 					   M('Program halted due to errors!', 'warn');
 					   return;
 					}
 					com.sse.evolution.appendChild( com.stack.print( com.stack.getValues() ) );
 					getEl( ids.ssePosition ).innerHTML = PC;
+					getEl( ids.FPPosition ).innerHTML = framepointer;
 				}
 				
 				function prev(){
@@ -145,7 +150,8 @@ var VMCompiler = (function(){
 					}
 					
 					var ind = com.sse.evolution.children.length-1;
-					com.ssframepointere.evolution.removeChild( com.sse.evolution.children[ ind ] );
+					com.sse.evolution.removeChild( com.sse.evolution.children[ ind ] );
+					console.log("Prev done");
 					var values = eval( com.sse.evolution.children[ ind-1 ].getAttribute( 'values' ) );
 
 					com.sse.stack.innerHTML = '';
@@ -157,6 +163,9 @@ var VMCompiler = (function(){
 					PC = tmp;
 					if( PCArray.length > 0 ) addClass( tokens[ PCArray[PCArray.length-1] ], cls.currentToken );
 					getEl( ids.ssePosition ).innerHTML = PC;
+
+					framepointer = FPArray.pop();
+					getEl( ids.FPPosition ).innerHTML = framepointer;
 				}
 				
 				function autoIterate(){

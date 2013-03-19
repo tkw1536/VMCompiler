@@ -19,7 +19,8 @@ window.onload = function(){
     sseForward           : 'SSE_timer_forward',
     sseBackward          : 'SSE_timer_backward',
     ssePosition          : 'SSE_position',
-    sseClose             : 'SSE_close'
+    sseClose             : 'SSE_close',
+    FPPosition           : 'FP_position'
   } );
   
   var menu        = document.getElementById('menu');
