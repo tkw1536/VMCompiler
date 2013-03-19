@@ -51,6 +51,15 @@ var VMCompiler = (function(){
 		var cStack = com.stack.editable( [0] );
 		
 		getEl( ids.stackHolder ).appendChild( cStack );
+
+		getEl( ids.resetStack ).onclick = function(){
+			cStack.parentNode.removeChild(cStack);
+
+			cStack = com.stack.editable( [0] );
+			getEl( ids.stackHolder ).appendChild( cStack ); //reset the stack
+		};
+
+
 		getEl( ids.startButton ).onclick = function(){ com.self.compile( ); };
 		getEl( ids.compileButton ).onclick = function(){ 
 			if(typeof restore == 'string'){

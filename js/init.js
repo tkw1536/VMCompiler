@@ -20,7 +20,8 @@ window.onload = function(){
     sseBackward          : 'SSE_timer_backward',
     ssePosition          : 'SSE_position',
     sseClose             : 'SSE_close',
-    FPPosition           : 'FP_position'
+    FPPosition           : 'FP_position',
+    resetStack           : 'opt_resetstack'
   } );
   
   var menu        = document.getElementById('menu');

@@ -88,8 +88,8 @@
             We define a token as a command or an arguments. i.e.( con 1 peek 2 )
             are 4 tokens.
             <table cellspacing="0" cellpadding="0">
-              <tr><td><b>peek x</b></td><td> removes the x-th element and pushes it on top of the stack</td></tr>
-              <tr><td><b>poke x</b></td><td>pushes the a copy of the x-th element on top of the stack</td></tr>
+              <tr><td><b>peek x</b></td><td>pushes the a copy of the x-th element on top of the stack. (x is zero-based. )</td></tr>
+              <tr><td><b>poke x</b></td><td>pops a, then replaces the x-th element on the stack with a. (x is zero-based. )</td></tr>
               <tr><td><b>con x</b></td><td>push( x )</td></tr>
               <tr><td><b>add</b></td><td>pop(a), pop(b), push( a + b )</td></tr>
               <tr><td><b>sub</b></td><td>pop(a), pop(b), push( a - b )</td></tr>
@@ -228,6 +228,9 @@ end:
               <div>
                 <h3>Max instructions</h3>
                 <div><input type="text" style="width:100%" id="opt_maxInstructions" value="1000" /></div>
+              </div>
+	      <div>
+                <div><input type="button" id="opt_resetstack" value="Reset Stack" /></div>
               </div>
           </td>
           
