@@ -416,8 +416,8 @@ var VMCompiler = (function(){
 				M('The function can\'t have less than 4 tokens', 'warn');
 			}
 			if( runProc ) {
-				if(cStack.length < a){
-					alert("Runtime error: Not enough elements on stack. ");
+				if(cStack.children.length < a){
+					alert("Runtime error: Not enough elements on stack for function call. ");
 					return null;
 				}
 				push(a); //argument number
