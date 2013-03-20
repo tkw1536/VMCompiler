@@ -1,82 +1,70 @@
-window.onload = function(){
-    
-  var VMC = new VMCompiler( {
-    textarea             : 'VMC_textarea', 
-    stackHolder          : 'VMC_stackHolder', 
-    compileButton	 : 'VMC_Compile',
-    startButton          : 'VMC_Start',
-    sseButton            : 'VMC_SSE',
-    stackEvolution       : 'VMC_stackEvolution',
-    overlay              : 'overlay',
-    optMaxInstructions   : 'opt_maxInstructions',
-    sseCode              : 'SSE_code',
-    sseStack             : 'SSE_stack',
-    sseEvolution         : 'SSE_evolution',
-    sseNext              : 'SSE_next',
-    ssePrev              : 'SSE_prev',
-    sseStartTimer        : 'SSE_startTimer',
-    sseTimeout           : 'SSE_timeout',
-    sseForward           : 'SSE_timer_forward',
-    sseBackward          : 'SSE_timer_backward',
-    ssePosition          : 'SSE_position',
-    sseClose             : 'SSE_close',
-    FPPosition           : 'FP_position',
-    resetStack           : 'opt_resetstack'
-  } );
-  
-  var menu        = document.getElementById('menu');
-  var links       = menu.getElementsByClassName('link');
-  var containers  = menu.getElementsByClassName('container');
-  var selected    = null;
-  
-  for( var i=0; i<links.length; ++i ){
-    links[i].menuIndex  = i;
-    links[i].onclick    = function(){
-      if( selected != this ){
-        deselect( selected );
-        select( this );
-      } else {
-        deselect( this );
-        selected = null;
-      }
-    };
-  };
-  
-  var tables = menu.getElementsByTagName( 'table' );
-  for( var i=0; i<tables.length; ++i ){
-    var tr = tables[i].getElementsByTagName( 'tr' );
-    for( var j=0; j<tr.length; ++j ){
-      addClass( tr[j], j % 2 == 0 ? 'even' : 'odd' );
-    }
-  }
-  
-  select( links[0] );
-  
-  function select( elem ){
-    if( selected ) deselect( selected );
-    if( elem ){
-      containers[ elem.menuIndex ].style.display = 'block';
-      addClass( elem, 'selected' );
-      selected = elem;
-    }
-  };
-  function deselect( elem ){
-    if( elem ){
-      containers[ elem.menuIndex ].style.display = 'none';
-      removeClass( elem, 'selected' );
-    }
-  }
-  
-  function hasClass(ele,cls) {
-    return ele.className.match(new RegExp('(\\s|^)'+cls+'(\\s|$)'));
-  }
-  function addClass(ele,cls) {
-    if (!hasClass(ele,cls)) ele.className += " "+cls;
-  }
-  function removeClass(ele,cls) {
-    if (hasClass(ele,cls)) {
-      var reg = new RegExp('(\\s|^)'+cls+'(\\s|$)');
-      ele.className=ele.className.replace(reg,' ');
-    }
-  }
-};
+$(function(){    
+	var VMC = new VMCompiler({//Ids for all the stuff
+		textarea             : 'VMC_textarea', 
+		stackHolder          : 'VMC_stackHolder', 
+		compileButton        : 'VMC_Compile',
+		startButton          : 'VMC_Start',
+		sseButton            : 'VMC_SSE',
+		stackEvolution       : 'VMC_stackEvolution',
+		overlay              : 'overlay',
+		optMaxInstructions   : 'opt_maxInstructions',
+		sseCode              : 'SSE_code',
+		sseStack             : 'SSE_stack',
+		sseEvolution         : 'SSE_evolution',
+		sseNext              : 'SSE_next',
+		ssePrev              : 'SSE_prev',
+		sseStartTimer        : 'SSE_startTimer',
+		sseTimeout           : 'SSE_timeout',
+		sseForward           : 'SSE_timer_forward',
+		sseBackward          : 'SSE_timer_backward',
+		ssePosition          : 'SSE_position',
+		sseClose             : 'SSE_close',
+		FPPosition           : 'FP_position',
+		resetStack           : 'opt_resetstack'
+	});
+
+	var menu        = $('#menu');
+	var links       = menu.find('.link');
+	var containers  = menu.find('.container');
+	var selected    = false;
+
+
+	//For the tabs
+	links.each(function(i){
+		$(this)
+		.data("menuIndex", i)
+		.click(function(){
+			var $this = $(this);
+			if($this.is(selected)){
+				deselect($this);
+				selected = false;
+			} else {
+				select($this);
+			}
+		});
+	});
+
+	menu.find('table tr').each(function(i){//beautify the tables
+		$(this).addClass((i % 2 == 0)? 'even': 'odd');
+	});
+
+
+	var select = function (elem){
+		if(selected instanceof jQuery){
+			deselect(selected);		
+		}
+
+		containers.eq(elem.data("menuIndex")).show();
+		elem.addClass("selected");
+
+		selected = elem;
+	};
+
+	var deselect = function(elem){
+		elem.removeClass("selected");
+		containers.eq(elem.data("menuIndex")).hide();
+	}
+	
+
+	select($(links.eq(0))); //Init tabs
+});
