@@ -176,12 +176,6 @@ var currentlyClicked = -1;
   };
 })(jQuery);
 
-// initialization
-
-$(function() {
-  $("#VMC_textarea").linedtextarea();
-});
-
 $(document).click(function() {
   if(nastyOnclickHack) {
     fillOutLines(null, null, null, true);

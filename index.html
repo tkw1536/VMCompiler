@@ -4,6 +4,11 @@
    <link href="css/linedtextarea.css" type="text/css" rel="stylesheet" />
    <title>VM Compiler</title>
    <script src="js/jQuery/jquery.js" type="text/javascript"></script>
+   <script type="text/javascript">
+	if($.fn.jquery != "1.9.1"){ //force jquery version 1.9.1
+		$.noConflict();	
+	}
+   </script>
    <script src="js/jQuery/linedtextarea.js" type="text/javascript"></script>
    <script src="js/VMC.js"></script>
    <script src="js/VMCompiler.js"></script>

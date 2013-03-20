@@ -1,4 +1,4 @@
-$(function(){    
+$(function(){	 
 	var VMC = new VMCompiler({//Ids for all the stuff
 		textarea             : 'VMC_textarea', 
 		stackHolder          : 'VMC_stackHolder', 
@@ -67,4 +67,7 @@ $(function(){
 	
 
 	select($(links.eq(0))); //Init tabs
+
+	//Textarea
+	$("#VMC_textarea").linedtextarea();	
 });
