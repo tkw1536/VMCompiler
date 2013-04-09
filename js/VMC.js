@@ -1048,6 +1048,14 @@ Parser = (function(){
 	var ignoreChars = [","]; //ignore chars
 
 
+	var spaces = function(n){
+		var res = "";
+		for(var i=0;i<n;i++){
+			res += " ";		
+		}
+		return res;
+	}
+
 	var removeComments = function(code){
 		var code = code;
 		for(var j=0;j<ignoreChars.length;j++){
@@ -1056,7 +1064,11 @@ Parser = (function(){
 		code = code.split("\n");
 		for(var i=0;i<code.length;i++){
 			for(var j=0;j<EOLComments.length;j++){
-				code[i] = code[i].split(EOLComments[j])[0] //EOL Style comments
+				var comps = code[i].split(EOLComments[j]);
+				code[i] = comps[0];
+				if(comps.length > 1){
+					code[i] += spaces(EOLComments[j].length+comps.slice(1).join(EOLComments[j]).length);
+				}
 			}
 		}
 
@@ -1073,15 +1085,22 @@ Parser = (function(){
 					//we are open
 					if(code.substr(i, end.length) == end){
 						i+= end.length;
-						res.push("");
+						res.push(spaces(end.length));
 						state = false;
 					} else {
+						//to keep error indexes
+						if(code[i] == '\n'){
+							res[res.length-1] += '\n';
+						} else {
+							res[res.length-1] += ' ';
+						}
 						i++;					
 					}	
 				} else {
 					//we are closed
 					if(code.substr(i, start.length) == start){
 						i += start.length;
+						res[res.length-1] += spaces(start.length);
 						state = true;
 					} else {
 						res[res.length-1] += code[i];
