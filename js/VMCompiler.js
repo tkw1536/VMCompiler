@@ -1,17 +1,23 @@
 var VMCompiler = (function(){
 
 
+	/*
+		@param code Code to compile
+		@returns compiles some labeled VM Code into unlabeled VM Code. 
+	*/
 	var CompileLabels = function(code){
-		code = code.split(",").join(""); //ignore commas
-		try{
-			return VMC(code);
-		} catch(e){
+		var res = VMC(code);
+
+		if(res[0] == true){
+			return res[1];		
+		} else {
+			e = res[1];
 			if(e.hasOwnProperty("line")){
 				alert("Error compiling code: \n"+e.message+ "\n(Line "+e.line.toString()+", Column "+e.offset.toString()+")");
 			} else {
 				alert("Error compiling code: \n"+e.message);
 			}
-			throw e;		
+			throw e;			
 		}
 	}
 	
@@ -196,19 +202,15 @@ var VMCompiler = (function(){
 				
 				/** -End Helper Functions- **/
 				
-				var str = CompileLabels(com.textarea.value);
-				/* DONE by CompileLabels			
-				str = str.replace( /\s\s+/g, ' ' )
-							.replace( /([a-zA-Z]+)\s+(\-?[0-9]+)/g, "$1 $2\n" )
-							.replace( /([a-zA-Z]+)\s+([a-zA-Z])/g, "$1\n$2" )
-							.replace( /[ ]+([a-zA-Z]+)/g, "$1" )
-							.replace( /(\s)\s+/g, "$1")
-							.replace( /^\s+|\s+$/g, '');
-				*/
-				var code 	= element('div');
-				var arr 		= str.split("\n");
-				var c 		= 0;
-				var tokens	= [];
+				var str = CompileLabels(com.textarea.value); //get the text
+
+
+
+
+				var code = element('div');
+				var arr = str.split("\n");
+				var c = 0;
+				var tokens = [];
 
 				for(var i in arr){
 					var t = arr[i].split(' ');

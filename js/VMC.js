@@ -1041,8 +1041,70 @@ Parser = (function(){
   
   return result;
 })();
+
+	var EOLComments = [";", "#", "//"]; //Comments until End of line
+	var MULComments = [["(*", "*)"], ["/*", "*/"], ["<!--", "-->"]]; //Multiline comments
+
+	var ignoreChars = [","]; //ignore chars
+
+
+	var removeComments = function(code){
+		var code = code;
+		for(var j=0;j<ignoreChars.length;j++){
+			code = code.split(ignoreChars[j]).join("");
+		}
+		code = code.split("\n");
+		for(var i=0;i<code.length;i++){
+			for(var j=0;j<EOLComments.length;j++){
+				code[i] = code[i].split(EOLComments[j])[0] //EOL Style comments
+			}
+		}
+
+		code = code.join("\n");
+
+
+		for(var j=0;j<MULComments.length;j++){
+			var start = MULComments[j][0];
+			var end = MULComments[j][1];
+			var res = [""];
+			var state = false;
+			for(var i=0;i<code.length;){
+				if(state){
+					//we are open
+					if(code.substr(i, end.length) == end){
+						i+= end.length;
+						res.push("");
+						state = false;
+					} else {
+						i++;					
+					}	
+				} else {
+					//we are closed
+					if(code.substr(i, start.length) == start){
+						i += start.length;
+						state = true;
+					} else {
+						res[res.length-1] += code[i];
+						i++;
+					}
+				}
+			}
+			code = res.join("");
+		}
+
+		return code;
+	}
+
+
 	return function(code){
-		var parsed = Parser.parse(code.toLowerCase());
+
+		var code = removeComments(code);
+
+		try{
+			var parsed = Parser.parse(code.toLowerCase());
+		} catch(e){
+			return [false, e];
+		}
 	
 		var commands = [];
 		var labels = {};
@@ -1117,6 +1179,6 @@ Parser = (function(){
 			outs.push(text);
 		}
 	
-		return outs.join("\n"); 
+		return [true, outs.join("\n")]; 
 	};
 })();
