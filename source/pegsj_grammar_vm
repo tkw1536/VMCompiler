@@ -26,7 +26,7 @@ integer = digits
 digits
 = digits:[0-9]+ { return parseInt(digits.join(""), 10); }
 
-/* commands */
+/* $command */
 zero_param_command
 = "halt"
 / "add"
@@ -35,23 +35,26 @@ zero_param_command
 / "leq"
 / "return"
 
+/* $command $number */
 one_param_command
 = "con"
 / "peek"
 / "poke"
 / "arg"
 
+/* $command $label_rel|$number */
 one_label_command
 = "jp"
 / "cjp"
 
+/* $command $label_abs|$number */
 one_abs_label_command
 = "call"
 
+/* $command $label_rel|$number $number */
 one_mixed_command
 = "proc"
 
-command
 = c:instruction
 / ospace l:label ":" c:instruction
 {
