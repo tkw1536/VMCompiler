@@ -23,10 +23,12 @@ var VMCompiler = (function(){
 	
 	return function( ids ){
 		
-		var PC 			= 0;
-		var PCArray		= [];
-		var cInstr		= null;
+		var PC 			= 0; //Program Counter
+		var PCArray		= []; //Array of previous program counters
+		
+		var cInstr		= null; //Instruction counter
 		var breakPoint	= 500;
+		
 		var runProc		= false; //are we running proc?
 		var ret 		= -1;
 		var framepointer	= -1; //frame pointer(s) (we need to store all the old ones also)
@@ -149,25 +151,36 @@ var VMCompiler = (function(){
 					addClass( tokens[ PC ], cls.currentToken );
 					PCArray.push( PC );
 					FPArray.push ( framepointer );
-					if( !com.self[a[PC]](a[PC+1], a[PC+2], a) ) {
-					   M('Program halted due to errors!', 'warn');
-					   return;
+					if(typeof com.self[a[PC]] != 'function'){
+						alert("Runtime error: Attempted to jump to numerical token. ");
+						return false;
 					}
-					com.sse.evolution.appendChild( com.stack.print( com.stack.getValues() ) );
+					if( !com.self[a[PC]](a[PC+1], a[PC+2], a) ) {
+					   //halted
+					   return false;
+					}
+					com.sse.evolution.appendChild( com.stack.print( com.stack.getValues(), framepointer) );
 					getEl( ids.ssePosition ).innerHTML = PC;
 					getEl( ids.FPPosition ).innerHTML = framepointer;
+					return true;
 				}
 				
 				function prev(){
 					if( PCArray.length <= 1 ) {
 						if( com.timeout ) clearTimeout( com.timeout );
-						return;
+						return false;
 					}
 					
 					var ind = com.sse.evolution.children.length-1;
-					com.sse.evolution.removeChild( com.sse.evolution.children[ ind ] );
-					console.log("Prev done");
-					var values = eval( com.sse.evolution.children[ ind-1 ].getAttribute( 'values' ) );
+					try{
+						com.sse.evolution.removeChild( com.sse.evolution.children[ ind ] );
+						var values = eval( com.sse.evolution.children[ ind-1 ].getAttribute( 'values' ) );
+					} catch(e){
+						if( com.timeout ) clearTimeout( com.timeout );
+						return false;
+					}
+					
+					
 
 					com.sse.stack.innerHTML = '';
 					cStack 						= com.stack.editable( values );
@@ -181,31 +194,37 @@ var VMCompiler = (function(){
 
 					framepointer = FPArray.pop();
 					getEl( ids.FPPosition ).innerHTML = framepointer;
+					return true;
 				}
 				
 				function autoIterate(){
-					var delay	= Number( getEl( ids.sseTimeout ).value );
-					delay			= isNaN( delay ) ? 500 : delay * 1000;
+					var delay =Number(getEl(ids.sseTimeout).value);
+					delay = isNaN( delay ) ? 500 : delay * 1000;
 					
-					if( com.timeout ) clearTimeout( com.timeout );
+					if(com.timeout){
+						clearTimeout(com.timeout);
+					}
 					
-					if( getEl( ids.sseBackward ).checked ) prev();
-						else next();
-
-					if( PC >= 0 && PC <= tokens.length ) com.timeout = setTimeout(function(){ autoIterate(); }, delay);
-						else {
-							clearTimeout( com.timeout );
-							com.timeout = null;
-							getEl( ids.sseStartTimer ).value = 'Start';
-						}
+					var res;
+					
+					if( getEl( ids.sseBackward ).checked ){
+						res = prev();
+					} else {
+						res = next();
+					}
+					
+					if( PC >= 0 && PC <= tokens.length && res){
+						com.timeout = setTimeout(function(){ autoIterate(); }, delay);
+					} else {
+						clearTimeout(com.timeout);
+						com.timeout = null;
+						getEl(ids.sseStartTimer).value = 'Start';
+					}
 				}
 				
 				/** -End Helper Functions- **/
 				
 				var str = CompileLabels(com.textarea.value); //get the text
-
-
-
 
 				var code = element('div');
 				var arr = str.split("\n");
@@ -234,7 +253,7 @@ var VMCompiler = (function(){
 				
 				/** Button Events **/
 				
-				getEl( ids.sseNext ).onclick = function(){ next(); };
+				getEl(ids.sseNext).onclick = function(){ next(); };
 				
 				getEl( ids.ssePrev ).onclick = function(){ prev(); };
 				
@@ -253,15 +272,17 @@ var VMCompiler = (function(){
 			
 				var i = 0;
 				while( PC < a.length && PC >= 0 ){
+					if(typeof this[a[PC]] != 'function'){
+						alert("Runtime error: Attempted to jump to numerical token. ");
+						break;
+					}
 					if( !this[a[PC]](a[PC+1], a[PC+2], a) ) {
-					   M('Program halted due to errors!', 'warn');
 					   break;
 					}
-					com.stackEvolution.appendChild( com.stack.print( com.stack.getValues() ) );
+					com.stackEvolution.appendChild( com.stack.print( com.stack.getValues(), framepointer) );
 					PCArray.push( PC );
 					if( ++i >= breakPoint ) {
 						alert("Runtime error: Too many instructions... maybe infinite loop. Exceeded: "+breakPoint+" instructions. ");
-						M('Too many instructions... maybe infinite loop. Exceeded: '+breakPoint+' instructions', 'error');
 						break;
 					}
 				}
@@ -294,7 +315,6 @@ var VMCompiler = (function(){
 				n = n !== undefined ? n : cStack.children.length - 1;
 				if( n > cStack.children.length-1 ){
 					alert("Runtime error: Index out of bounds. ");
-					M('Index out of bounds', 'warn');
 					return null;
 				}
 				var obj 	= get(n);
@@ -308,7 +328,6 @@ var VMCompiler = (function(){
 		this.peek = function(n){
 			if( n > cStack.children.length-1 ){
 				alert("Runtime error: Index out of bounds. ");
-				M('Index out of bounds', 'warn');
 				return null;
 			}
 			push( val(get(n)) );
@@ -334,7 +353,6 @@ var VMCompiler = (function(){
 		this.add = function(){
 			if( cStack.children.length < 2 ){
 				alert("Runtime error: Not enough elements in stack. ");
-				M('Not enough elements in stack', 'warn');
 				return null;
 			}
 			var x = pop();
@@ -348,7 +366,6 @@ var VMCompiler = (function(){
 		this.sub = function(){
 			if( cStack.children.length < 2 ){
 				alert("Runtime error: Not enough elements in stack. ");
-				M('Not enough elements in stack', 'warn');
 				return null;
 			}
 			var x = pop();
@@ -362,7 +379,6 @@ var VMCompiler = (function(){
 		this.mul = function(){
 			if( cStack.children.length < 2 ){
 				alert("Runtime error: Not enough elements in stack. ");
-				M('Not enough elements in stack', 'warn');
 				return null;
 			}
 			var x = pop();
@@ -376,7 +392,6 @@ var VMCompiler = (function(){
 		this.leq = function(){
 			if( cStack.children.length < 2 ){
 				alert("Runtime error: Not enough elements in stack. ");
-				M('Not enough elements in stack', 'warn');
 				return null;
 			}
 			push( pop()<=pop() ? 1 : 0 );
@@ -388,7 +403,6 @@ var VMCompiler = (function(){
 		this.jp = function(n){
 			if(PC + n < 0 || PC + n >= cInstr.length){
 				alert("Runtime error: Jump index out of bounds. ");
-				M('Jump index out of bounds', 'warn');
 				return null;
 			}
 			
@@ -415,7 +429,6 @@ var VMCompiler = (function(){
 			b = Number( b );
 			if( isNaN(b) || b < 4 ){
 				alert("Runtime error: The function can't have less than 4 tokens. ");
-				M('The function can\'t have less than 4 tokens', 'warn');
 			}
 			if( runProc ) {
 				if(cStack.children.length < a){
@@ -448,7 +461,6 @@ var VMCompiler = (function(){
 			PC = pop(fp--); //jump back
 			if(isNaN(PC)){
 				alert("Runtime Error: Frame has been destroyed. ");
-				M('Frame has been destroyed', 'warn');
 				return null;		
 			}
 			framepointer = pop(fp--); //old framepointer
@@ -465,7 +477,6 @@ var VMCompiler = (function(){
 			var count = val(get(framepointer-2));
 			if(a <= 0 || a > count){
 				alert("Runtime error: Invalid argument number. ");
-				M('Invalid argument number', 'warn');
 				return null;
 			}
 			push(val(get(framepointer-2-a))); //get the specefied argument
@@ -545,14 +556,24 @@ var Stack = (function(){
 			return a;
 		}
 		
-		this.print = function( values ) {
+		this.print = function( values, framepointer) {
 			
 			values = values.reverse();
 			
 			var s = element('span', { 'className':cls.printMain });
-			for( var i in values )
-				s.appendChild( element('div', {'className':cls.item}, values[i]) );
-				
+			if(framepointer != -1){
+				var start = values.length-framepointer-1;
+				var end = start+parseInt(values[values.length-framepointer+1])+3;
+			}
+			for(var i in values){
+				i = parseInt(i);
+				if(framepointer != -1 && i < end && i >= start){
+					s.appendChild(element('div', {'className':cls.item+" frame"}, values[i])); //Highlight it in some way
+				} else {
+					s.appendChild(element('div', {'className':cls.item}, values[i]));
+				}
+			}
+
 			s.setAttribute('values', '['+values.join(',')+']');
 			
 			return s;
@@ -595,21 +616,4 @@ function getEl( id, context ){
 	context = context ? context : document;	
 	 
 	return context.getElementById( id ) 
-}
-
-/**
- * A Message function. checks to see if firebug is enabled
- * @param obj the object to output. If firebut is disable, will only work for: string, int, float
- * @param type log, info, err
-**/
-function M(obj, type){
-	type = type ? type : "log";
-	if(typeof console != 'undefined' && console != null){
-		switch(type){
-			case "log"	: console.log( obj ); break;
-			case "info"	: console.info( obj ); break;
-			case "warn"	: console.warn( obj ); break;
-			case "err"	: console.err( obj ); break;
-		}
-	}
 }
