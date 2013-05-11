@@ -1,18 +1,23 @@
 <html>
- <head>
-   <link rel="stylesheet" href="css/VMCompiler.css" />
-   <link href="css/linedtextarea.css" type="text/css" rel="stylesheet" />
+ <head>   
    <title>VM Compiler</title>
+   
+   <!-- jQuery -->
+   
    <script src="js/jQuery/jquery.js" type="text/javascript"></script>
-   <script type="text/javascript">
-	if($.fn.jquery != "1.9.1"){ //force jquery version 1.9.1
-		$.noConflict();	
-	}
-   </script>
    <script src="js/jQuery/linedtextarea.js" type="text/javascript"></script>
+   
+   
+   <!-- VMCompiler -->
+   
    <script src="js/VMC.js"></script>
    <script src="js/VMCompiler.js"></script>
    <script src="js/init.js"></script>
+   
+   <!-- CSS -->
+   
+   <link rel="stylesheet" href="css/VMCompiler.css" />
+   <link href="css/linedtextarea.css" type="text/css" rel="stylesheet" />
  </head>
  
  <body>
@@ -99,7 +104,7 @@
               <tr><td><b>peek x</b></td><td>pushes the a copy of the x-th element on top of the stack. (x is zero-based. )</td></tr>
               <tr><td><b>poke x</b></td><td>pops a, then replaces the x-th element on the stack with a. (x is zero-based. )</td></tr>
               <tr><td><b>con x</b></td><td>push( x )</td></tr>
-              <tr><td><b>add</b></td><td>pop(a), pop(b), push( a + b )</td></tr>
+              <tr><td><b>add</b></td><td>pop(a), pop(b), push( a Developed by Stefan Mirea; improved by Tom Wiesing;+ b )</td></tr>
               <tr><td><b>sub</b></td><td>pop(a), pop(b), push( a - b )</td></tr>
               <tr><td><b>mul</b></td><td>pop(a), pop(b), push( a * b )</td></tr>
               <tr><td><b>leq</b></td><td>pop(a), pop(b). push( a&lt;=b? 1 : 0 )</td></tr>
@@ -114,7 +119,8 @@ program address p. p may also be a label. </td></tr>
               <tr><td><b>halt</b></td><td>Stops the execution</td></tr>
               <tr><td><b>labelName: command</b></td><td>Adds a label with the name labelName at the current position. Labels consist of letters, numbers, $ and _ . They may not start with a number. </td></tr>
             </table>
-		You can also add comments to your code. They can be in any common format. ("//Comment", "#Comment ", ";Comment", "(* Comment *), "/* Comment */"). Before runtime, all comments will be replaced with spaces. 
+		You can also add comments to your code. They can be in any common format. <br />
+		("// Comment", "# Comment ", "; Comment", "% Comment", "(* Comment *), "/* Comment */"). Before runtime, all comments will be replaced with spaces. 
           </div>
           <div class="container">
             This is the problem that got it all started: <br />
@@ -207,8 +213,7 @@ end:
 
           </div>
           <div class="container">
-            This little app has been developed by 
-              <a href="http://stefan.code4fun.de" target="_blank">Stefan Mirea</a>
+            This little app has been originally developed by <a href="http://stefan.code4fun.de" target="_blank">Stefan Mirea</a>
               in response to a homework received at the General Computer Science
               course where we had to output the stack trace for a VM program. <br />
               It also became quite popular after every TA for the GenCS II course
@@ -218,6 +223,7 @@ end:
               If you have any bugs to report of stuff like that,
               just <a href="mailto:steven.mirea@gmail.com">send me an email</a>!<br />
               <br />
+              
               Me, Tom Wiesing, improved this to add labels and better error messages. I also added procedures. <br />
 	      <br />
               Happy coding!
@@ -225,43 +231,44 @@ end:
         </div>
       </div>
       
-      <table id="editor">
-        <tr>
-          <td id="textareaHolder">
-              <textarea id="VMC_textarea"></textarea>
-          </td>
-          
-          <td align="center" style="width:100px" id="options">
-              <div style="background: white; padding: 3px; border-bottom: 1px solid #696969; margin-top: 2px; font-weight: bold;">Options</div>
-              
-              <div>
-                <h3>Max instructions</h3>
-                <div><input type="text" style="width:100%" id="opt_maxInstructions" value="1000" /></div>
-              </div>
-	      <div>
-                <div><input type="button" id="opt_resetstack" value="Reset Stack" /></div>
-              </div>
-          </td>
-          
-          <td id="VMC_stackHolder" align="center"></td>
-        </tr>
-        <tr>
-          <td id="actionHolder" colspan="3" align="center">
-              <input type="button" value="Compile (delabelize)" id="VMC_Compile" />
-              <input type="button" value="Execute" id="VMC_Start" />
-              <input type="button" value="Step-by-Step Execution" id="VMC_SSE" />
-          </td>
-        </tr>
-        <tr>
-          <td id="VMC_stackEvolution" colspan="3"></td>
-        </tr>
-      </table>
-   </div>
+		<table id="editor">
+	     	<tr>
+	        	<td id="textareaHolder">
+	            	<textarea id="VMC_textarea"></textarea>
+	          	</td>
+	          
+	          <td align="center" style="width:100px" id="options">
+	              <div style="background: white; padding: 3px; border-bottom: 1px solid #696969; margin-top: 2px; font-weight: bold;">Options</div>
+	              
+	              <div>
+	                <h3>Max instructions</h3>
+	                <div><input type="text" style="width:100%" id="opt_maxInstructions" value="1000" /></div>
+	              </div>
+		      <div>
+	                <div><input type="button" id="opt_resetstack" value="Reset Stack" /></div>
+	              </div>
+	          </td>
+	          
+	          <td id="VMC_stackHolder" align="center"></td>
+	        </tr>
+	        <tr>
+	          <td id="actionHolder" colspan="3" align="center">
+	              <input type="button" value="Compile (delabelize)" id="VMC_Compile" />
+	              <input type="button" value="Execute" id="VMC_Start" />
+	              <input type="button" value="Step-by-Step Execution" id="VMC_SSE" />
+	          </td>
+	        </tr>
+	        <tr>
+	          <td id="VMC_stackEvolution" colspan="3"></td>
+	        </tr>
+    	</table>
+   	</div>
    
-   <div id="footer">
-      <a href="mailto:steven.mirea@gmail.com" title="Bugs, comments, suggestions go to this dude">Developed by Stefan Mirea</a>; 
-      <a href="mailto:t.wiesing@jacobs-university.de">improved by Tom Wiesing</a>
-   </div>
+	<div id="footer">
+		<a href="mailto:steven.mirea@gmail.com" title="Bugs, comments, suggestions go to this dude">Developed by Stefan Mirea</a> - 
+		<a href="mailto:t.wiesing@jacobs-university.de">improved by Tom Wiesing</a> - 
+		<a href="https://github.com/tkw1536/VMCompiler" target="_blank"> Source Code on GitHub</a>
+	</div>
  </body>
  
 </html>

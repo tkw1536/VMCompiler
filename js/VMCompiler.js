@@ -6,19 +6,18 @@ var VMCompiler = (function(){
 		@returns compiles some labeled VM Code into unlabeled VM Code. 
 	*/
 	var CompileLabels = function(code){
-		var res = VMC(code);
-
-		if(res[0] == true){
-			return res[1];		
-		} else {
-			e = res[1];
-			if(e.hasOwnProperty("line")){
-				alert("Error compiling code: \n"+e.message+ "\n(Line "+e.line.toString()+", Column "+e.offset.toString()+")");
+		try{
+			var res = VMC(code);
+			if(res[0] == true){
+				return res[1];		
 			} else {
-				alert("Error compiling code: \n"+e.message);
+				throw res[1];
 			}
-			throw e;			
+		} catch(f){
+			alert("Error compiling code: \n"+f.message);
+			throw f; 
 		}
+		
 	}
 	
 	return function( ids ){
@@ -183,7 +182,7 @@ var VMCompiler = (function(){
 					
 
 					com.sse.stack.innerHTML = '';
-					cStack 						= com.stack.editable( values );
+					cStack = com.stack.editable( values );
 					com.sse.stack.appendChild( cStack );
 					
 					var tmp = PCArray.pop();

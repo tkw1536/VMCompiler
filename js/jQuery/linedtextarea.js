@@ -27,77 +27,26 @@
  *   - 2010.01.06: Initial Release
  *
  */
-
-var nastyOnclickHack = false;
-var currentlyClicked = -1;
-
 (function($) {
 
 	$.fn.linedtextarea = function(options) {
 		
 		// Get the Options
 		var opts = $.extend({}, $.fn.linedtextarea.defaults, options);
-	
-		/*
-			Little helper function to get number of empty lines between two given ones
-		*/
-		var getEmptyLinesNum = function( offset1, offset2) {
-			var content = document.getElementById("VMC_textarea").value.split("\n");
-
-			for(var i = content.length - 1 ; i < Math.max(offset1, offset2) ; i++) {
-				content.push("");
-			}
-
-			num = 0;
-
-			if (offset1 < offset2) {
-				var extract = content.slice(offset1-1, offset2-1);
-			} else if (offset2 < offset1) {
-				var extract = content.slice(offset2, offset1);
-			}
-
-			for(var c in extract) {
-				num += (extract[c] === "") ? 1 : 0;
-			}
-
-			return num;
-		}
-	
+		
 		
 		/*
 		 * Helper function to make sure the line numbers are always
 		 * kept up to the current system
 		 */
-		fillOutLines = function(codeLines, h, lineNo, change){ // yeah, I am global
-			if (typeof change === 'undefined') {
-				while ( (codeLines.height() - h ) <= 0 ){
-					codeLines.append("<div id='numberedLine_"+lineNo+"' class='lineno' onclick='javascript:nastyOnclickHack=true;currentlyClicked="+lineNo+"'>" + lineNo + "</div>");
-					lineNo++;
-				}
-			}
-			else {
-				if (change) {
-					if(currentlyClicked != -1) {
-						fillOutLines(null, null, null, false);
-					}
-					for (var d in codeLinesDiv[0].children) {
-						var elem = codeLinesDiv[0].children[d];
-						var num = elem.innerHTML;
-						if (typeof num === 'undefined'){}
-						else {
-							var emptyNum = getEmptyLinesNum(num, currentlyClicked);
-							var ind = num - currentlyClicked;
-							emptyNum *= (ind <= 0)? 1 : -1;
-							console.log(ind + " - " + emptyNum + " = " + (ind + emptyNum));
-							$("#numberedLine_" + num).html(ind + emptyNum);
-						}
-					}
-				}
-				else {
-					for (var d in codeLinesDiv[0].children) {
-						$("#numberedLine_" + d).html(d);
-					}
-				}
+		var fillOutLines = function(codeLines, h, lineNo){
+			while ( (codeLines.height() - h ) <= 0 ){
+				if ( lineNo == opts.selectedLine )
+					codeLines.append("<div class='lineno lineselect'>" + lineNo + "</div>");
+				else
+					codeLines.append("<div class='lineno'>" + lineNo + "</div>");
+				
+				lineNo++;
 			}
 			return lineNo;
 		};
@@ -128,7 +77,7 @@ var currentlyClicked = -1;
 			
 			/* Draw the number bar; filling it out where necessary */
 			linesDiv.append( "<div class='codelines'></div>" );
-			codeLinesDiv	= linesDiv.find(".codelines");
+			var codeLinesDiv	= linesDiv.find(".codelines");
 			lineNo = fillOutLines( codeLinesDiv, linesDiv.height(), 1 );
 
 			/* Move the textarea to the selected line */ 
@@ -175,15 +124,3 @@ var currentlyClicked = -1;
   	selectedClass: 'lineselect'
   };
 })(jQuery);
-
-$(document).click(function() {
-  if(nastyOnclickHack) {
-    fillOutLines(null, null, null, true);
-    nastyOnclickHack = false;
-  } else {
-    if (currentlyClicked != -1) {
-      fillOutLines(null, null, null, false);
-    }
-    currentlyClicked = -1;
-  }
-});

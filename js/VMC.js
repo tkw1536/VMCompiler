@@ -1042,7 +1042,7 @@ Parser = (function(){
   return result;
 })();
 
-	var EOLComments = [";", "#", "//"]; //Comments until End of line
+	var EOLComments = [";", "#", "//", "%"]; //Comments until End of line
 	var MULComments = [["(*", "*)"], ["/*", "*/"], ["<!--", "-->"]]; //Multiline comments
 
 	var ignoreChars = [","]; //ignore chars
