@@ -106,7 +106,6 @@ In case of compiling errors or runtime errors, the compiler will display a messa
 ## TODO
 * update peek and poke to work properly within functions
 * make return have only 1 return value
-* rewrite parts of the code to use jQuery and be more stable
 
 ## Sources & Used Libraries
 

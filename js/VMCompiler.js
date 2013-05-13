@@ -1,6 +1,7 @@
+/*
+	VMCompiler Main Code
+*/
 var VMCompiler = (function(){
-
-
 	/*
 		@param code Code to compile
 		@returns compiles some labeled VM Code into unlabeled VM Code. 
@@ -41,245 +42,330 @@ var VMCompiler = (function(){
 			currentToken	: 'SSE-current-token'
 		}
 		
+		//init com namespace
 		var com = {
-			self				: this,
-			stack			 	: new Stack(),
-			textarea			: getEl( ids.textarea ),
-			stackEvolution	: getEl( ids.stackEvolution ),
-			timeout			: null,
-			sse 				: {
-				main			: getEl( ids.overlay ),
-				code 			: getEl( ids.sseCode ),
-				stack 		: getEl( ids.sseStack ),
-				evolution	: getEl( ids.sseEvolution )
+			self: this,
+			stack: new Stack(),
+			textarea: $("#"+ids.textarea),
+			stackEvolution: $("#"+ids.stackEvolution),
+			timeout: null,
+			sse: {
+				main : $("#"+ids.overlay),
+				code : $("#"+ids.sseCode),
+				stack : $("#"+ids.sseStack),
+				evolution : $("#"+ids.sseEvolution)
 			}
 		}
 		
+		//init stack
 		var cStack = com.stack.editable( [0] );
 		
-		getEl( ids.stackHolder ).appendChild( cStack );
+		$("#"+ids.stackHolder).append(cStack);
 
-		getEl( ids.resetStack ).onclick = function(){
-			cStack.parentNode.removeChild(cStack);
+		//stack reset button
+		$("#"+ids.resetStack ).click(function(){
+			cStack.remove();
+			cStack=com.stack.editable([0]);
+			$("#"+ids.stackHolder).append( cStack );
+		});
 
-			cStack = com.stack.editable( [0] );
-			getEl( ids.stackHolder ).appendChild( cStack ); //reset the stack
-		};
-
-
-		getEl( ids.startButton ).onclick = function(){ com.self.compile( ); };
-		getEl( ids.compileButton ).onclick = function(){ 
+		//start button
+		$("#"+ids.startButton).click(function(){
+			com.self.compile();
+		});
+		
+		//compile button
+		$("#"+ids.compileButton).click(function(){ 
 			if(typeof restore == 'string'){
-				com.textarea.value = restore;
+				com.textarea.val(restore);
 				restore = false;
-				getEl( ids.compileButton ).value = "Compile (delabelize)";
-				com.textarea.readOnly = false;
+				$("#"+ids.compileButton).val("Compile (delabelize)");
+				com.textarea.removeAttr("readOnly"); 
 			} else {
-				restore = com.textarea.value;
+				restore = com.textarea.val();
 				try{
-					com.textarea.value = CompileLabels( restore );
-					getEl( ids.compileButton ).value = "Restore (relabelize)";
-					com.textarea.readOnly = true;
+					com.textarea.val(CompileLabels(restore));
+					$("#"+ids.compileButton ).val("Restore (relabelize)");
+					com.textarea.attr("readOnly", "readOnly"); 
 				} catch(e){
 					restore = false;
 					throw e;
 				}
-				
 			}
-		};
-		getEl( ids.sseButton ).onclick = function(){ com.self.compile( true ); };
-		getEl( ids.sseClose ).onclick = function(){ 
-			com.sse.main.style.display = 'none'; 
-			com.sse.main.zIndex = -1;
-			getEl( ids.stackHolder ).appendChild( cStack );
-		};
+		});
 		
-
-		this.evaluate = function( code ){
-			code = code ? code : CompileLabels(com.textarea.value);
+		//step by step execution button
+		$("#"+ids.sseButton).click(function(){com.self.compile(true);});
+		
+		//close the step by step stuff
+		$("#"+ids.sseClose).click(function(){ 
+			//stop the timeout if it exists
+			if(com.timeout) {
+				clearTimeout(com.timeout);
+				com.timeout = null;
+			}
+			com.sse.main.hide(); 
+			com.sse.main.css("zIndex", -1);
+			$("#"+ids.stackHolder).append(cStack);
+		});
+		
+		//evaluate some code
+		this.evaluate = function(code){
+			code = code ? code : CompileLabels(com.textarea.val());
 			code = code.replace(/\s+/gi, ' ').replace(/^\s|\s$/g, '').toLowerCase();
 			return code;
 		}
-		
-		this.getArray = function( code ){
+		//get code array
+		this.getArray = function(code){
 			var a = this.evaluate(code).split(' ');
 			for(var i in a) if( /^[\-]?[0-9]+$/.test(a[i]) ) a[i] = Number( a[i] );
 			return a;
 		}
 		
+		//compile & run
 		this.compile = function( stepByStep ){
-			var a		= this.getArray();
-			cInstr 	= a;
 			
+			//get instruction count
+			var a = this.getArray();
+			cInstr = a;
+			
+			//framepointer
+			framepointer = -1;
+			FPArray = [];
 
-			framepointer		= -1;
-			FPArray		= [];
+			//are we in a procedure
+			runProc	= false;
+			ret = -1; //return adress
 
-			runProc			= false;
-			ret 			= -1;
-
+			//program counter
 			PC 			= 0;
 			PCArray		= [];
-			breakPoint	= Number(getEl( ids.optMaxInstructions ).value);
-			breakPoint	= isNaN( breakPoint ) ? 1000 : breakPoint;
-			com.stackEvolution.innerHTML 	= '';
-			com.sse.evolution.innerHTML 	= '';
 			
-			if( stepByStep ){
-				
-				/** Helper functions **/
-				
-				function hasClass( ele,cls ) { return ele.className.match(new RegExp('(\\s|^)'+cls+'(\\s|$)')); }
-				
-				function addClass( ele,cls ) { if (!hasClass(ele,cls)) ele.className += " "+cls; }
-				 
-				function removeClass( ele,cls ) {
-					if (hasClass(ele,cls)) {
-						var reg = new RegExp('(\\s|^)'+cls+'(\\s|$)');
-						ele.className=ele.className.replace(reg,' ');
-					}
-				}
-				
+			//break point
+			breakPoint	= Number($("#"+ids.optMaxInstructions).val());
+			breakPoint	= isNaN( breakPoint ) ? 1000 : breakPoint;
+			
+			//reset html
+			com.stackEvolution.html('');
+			com.sse.evolution.html('');
+			
+			if(stepByStep){ //are we running step by step ? 
+			
+				/*
+					runs the next command
+				*/
 				function next(){
+					//check for end
 					if( PC < 0 || PC >= tokens.length ) {
-						if( com.timeout ) clearTimeout( com.timeout );
+						if(com.timeout){
+							clearTimeout(com.timeout);
+						}
 						return;
 					}
-					 
-					if( PCArray.length > 0 ) removeClass( tokens[ PCArray[PCArray.length-1] ], cls.currentToken );
-					addClass( tokens[ PC ], cls.currentToken );
+					
+					//update the current PC
+					if(PCArray.length > 0){
+						$(tokens[PCArray[PCArray.length-1]]).removeClass(cls.currentToken);
+					}
+					
+					$(tokens[PC]).addClass(cls.currentToken);
+					
+					
+					//update the state for reversibility
 					PCArray.push( PC );
 					FPArray.push ( framepointer );
+					
+					
+					//did we do a valid jump? 
 					if(typeof com.self[a[PC]] != 'function'){
 						alert("Runtime error: Attempted to jump to numerical token. ");
 						return false;
 					}
+					
+					//execute command
 					if( !com.self[a[PC]](a[PC+1], a[PC+2], a) ) {
 					   //halted
 					   return false;
 					}
-					com.sse.evolution.appendChild( com.stack.print( com.stack.getValues(), framepointer) );
-					getEl( ids.ssePosition ).innerHTML = PC;
-					getEl( ids.FPPosition ).innerHTML = framepointer;
+					
+					//redraw stuff
+					com.sse.evolution.append(
+						com.stack.print(com.stack.getValues(), framepointer)
+					);
+					
+					//update the displays
+					$("#"+ids.ssePosition).text(PC);
+					$("#"+ids.FPPosition).text(framepointer);
+					
 					return true;
 				}
 				
+				/*
+					undos the last command
+				*/
 				function prev(){
-					if( PCArray.length <= 1 ) {
-						if( com.timeout ) clearTimeout( com.timeout );
-						return false;
-					}
-					
-					var ind = com.sse.evolution.children.length-1;
-					try{
-						com.sse.evolution.removeChild( com.sse.evolution.children[ ind ] );
-						var values = eval( com.sse.evolution.children[ ind-1 ].getAttribute( 'values' ) );
-					} catch(e){
-						if( com.timeout ) clearTimeout( com.timeout );
+					//check for beginning
+					if(PCArray.length <= 1) {
+						if(com.timeout){
+							clearTimeout(com.timeout);
+						}
 						return false;
 					}
 					
 					
+					//restore the values
+					
+					if(com.sse.evolution.children().last().length == 0){
+						if(com.timeout){
+							clearTimeout(com.timeout);
+						}
+						return false;
+					}
+									
+					com.sse.evolution.children().last().remove();
+					
+					//get the previous values or set them to []
+					
+					var values = com.sse.evolution.children().last().data("values");
+					values = (typeof values != 'undefined')?values:[];
 
-					com.sse.stack.innerHTML = '';
+					com.sse.stack.html("");
+					
+					//redraw old values
 					cStack = com.stack.editable( values );
-					com.sse.stack.appendChild( cStack );
+					com.sse.stack.append(cStack);
 					
-					var tmp = PCArray.pop();
-					removeClass( tokens[ tmp ], cls.currentToken );
-					PC = tmp;
-					if( PCArray.length > 0 ) addClass( tokens[ PCArray[PCArray.length-1] ], cls.currentToken );
-					getEl( ids.ssePosition ).innerHTML = PC;
+					
+					
+					//restore program counter
+					PC = PCArray.pop();
+					$(tokens[ PC ]).removeClass(cls.currentToken); //todo: make tokens jQuery
+					
+					if(PCArray.length > 0 ){
+						$(tokens[PCArray[PCArray.length-1]]).addClass(cls.currentToken);
+					}
+					
+					$("#"+ids.ssePosition ).text(PC);
 
+
+					//restore framepointer
 					framepointer = FPArray.pop();
-					getEl( ids.FPPosition ).innerHTML = framepointer;
+					$("#"+ids.FPPosition ).text(framepointer);
+					
 					return true;
 				}
 				
+				/*
+					iterate automatically
+				*/
 				function autoIterate(){
-					var delay =Number(getEl(ids.sseTimeout).value);
+				
+					//get delay
+					var delay = Number($("#"+ids.sseTimeout).val());
 					delay = isNaN( delay ) ? 500 : delay * 1000;
 					
+					//clear old timeout
 					if(com.timeout){
 						clearTimeout(com.timeout);
 					}
 					
+					//result variable
 					var res;
 					
-					if( getEl( ids.sseBackward ).checked ){
+					//iterate
+					if( $("#"+ids.sseBackward ).is(":checked")){
 						res = prev();
 					} else {
 						res = next();
 					}
 					
 					if( PC >= 0 && PC <= tokens.length && res){
-						com.timeout = setTimeout(function(){ autoIterate(); }, delay);
+						//set new timeout
+						com.timeout = setTimeout(autoIterate, delay);
 					} else {
+						//remove old timeout
 						clearTimeout(com.timeout);
 						com.timeout = null;
-						getEl(ids.sseStartTimer).value = 'Start';
+						$("#"+ids.sseStartTimer).val('Start');
 					}
 				}
 				
-				/** -End Helper Functions- **/
-				
-				var str = CompileLabels(com.textarea.value); //get the text
-
-				var code = element('div');
+				var str = CompileLabels(com.textarea.val()); //get the text
 				var arr = str.split("\n");
+
+				//create a code div
+				var code = $("<div>");
+				
 				var c = 0;
 				var tokens = [];
 
-				for(var i in arr){
-					var t = arr[i].split(' ');
-					for(var j in t) {
-						var tmp = element('span', {'className':cls.codeToken, 'id':'token_'+c}, t[j]);
-						tokens.push( tmp );
-						code.appendChild( tmp );
-						++c;
+				//create the tokenised code
+				for(var i=0;i<arr.length; i++){
+					var t = arr[i].split(" ");
+					
+					for(var j=0;j<t.length;j++) {
+					
+						tokens.push(
+							$("<span>")
+							.addClass(cls.codeToken)
+							.attr("id", 'token_'+c)
+							.html(t[j])
+							.appendTo(code)
+						);
+						
+						c++;
 					}
-					code.appendChild( element('br') );
+					code.append("<br />");
 				}
 				
-				/** Bulk setup **/
+				//Setup the html
 				
-				com.sse.code.innerHTML = '';
-				com.sse.code.appendChild( code );
+				com.sse.code.html("");
+				com.sse.code.append(code);
+				com.sse.stack.append(cStack);
 				
-				com.sse.stack.appendChild( cStack );
-				com.sse.main.style.display	   = 'block';
-				com.sse.main.style.zIndex		= 100;
+				//show the main window
+				com.sse.main.show().css("zIndex", 100);
 				
-				/** Button Events **/
+				//add button click handlers				
+				$("#"+ids.sseNext).off("click").click(next);
+				$("#"+ids.ssePrev).off("click").click(prev);
 				
-				getEl(ids.sseNext).onclick = function(){ next(); };
-				
-				getEl( ids.ssePrev ).onclick = function(){ prev(); };
-				
-				getEl( ids.sseStartTimer ).onclick = function(){ 
-					if( com.timeout ) {
-						this.value 	= 'Start';
-						clearTimeout( com.timeout );
+				$("#"+ids.sseStartTimer).off("click").click(function(){ 
+					//add a timeout or remove it}),
+					if(com.timeout) {
+						$(this).val('Start');
+						clearTimeout(com.timeout);
 						com.timeout = null;
 					} else {
-						this.value = 'Stop';
+						$(this).val('Stop');
 						autoIterate(); 
 					}
-				};
+				});
 				
 			} else {
-			
+				//running the code
+				
 				var i = 0;
+				
+				//while we have stuff to do
 				while( PC < a.length && PC >= 0 ){
+					//valid jump?
 					if(typeof this[a[PC]] != 'function'){
 						alert("Runtime error: Attempted to jump to numerical token. ");
 						break;
 					}
+					
+					//execute command
 					if( !this[a[PC]](a[PC+1], a[PC+2], a) ) {
 					   break;
 					}
-					com.stackEvolution.appendChild( com.stack.print( com.stack.getValues(), framepointer) );
-					PCArray.push( PC );
+					
+					//print the new stack
+					com.stackEvolution.append(com.stack.print( com.stack.getValues(), framepointer));
+					
+					
+					//break point
 					if( ++i >= breakPoint ) {
 						alert("Runtime error: Too many instructions... maybe infinite loop. Exceeded: "+breakPoint+" instructions. ");
 						break;
@@ -287,45 +373,58 @@ var VMCompiler = (function(){
 				}
 				
 			}
+		}
+		
+		//Stack Functions
+		
+		
+		//gets the integer value of an editable stack cell
+		function val( obj, set ){
+			obj = $(obj).children().children().eq(0); //TODO: Remove jQuery if safe
+			if(typeof set  != "undefined"){
+				$(obj).val(set);
+			} else {
+				return Number(obj.val());
+			}
+		}
+		
+		//get a specefied stack element
+		function get( index ){
+			index = (typeof index != "undefined")? index : cStack.find("tr").length - 1;
+			return cStack.find("tr").eq(cStack.find("tr").length - 1 - index);
+		}
+
+		//push an element to the stack
+		function push( n, index ){
+			n = n ? n : 0;
+			index = (typeof index != "undefined")? index : cStack.find("tr").length - 1;
+			if(index == -1){
+				cStack.append(com.stack.newItem(n));
+			} else {
+				com.stack.newItem(n).insertBefore(get(index));
+			}
 			
 		}
 		
-		/** STACK VM MANIPULATING FUNCTIONS **/
+		//pop an element from the stack and return it
+		function pop( n ){
+			n = (typeof n != "undefined") ? n : cStack.find("tr").length - 1;
+			if( n >= cStack.find("tr").length ){
+				alert("Runtime error: Index out of bounds. ");
+				return null;
+			}
+			var obj = get(n);
+			var v = val(obj);
+			obj.remove();
+			return v;
+		}
+				
+		//VM Procedures
 		
-		/** Private helper functions **/
-			function val( obj, set ){
-				obj = obj.children[0].children[0];
-				if( set !== undefined ) obj.value = set;
-					else return Number(obj.value);
-			}
-			
-			function get( index ){
-				index = index !== undefined ? index : cStack.children.length - 1;
-				return cStack.children[ cStack.children.length - index - 1 ];
-			}
-	
-			function push( n, index ){
-				n = n ? n : 0;
-				index = index !== undefined ? index : cStack.children.length - 1;
-				cStack.insertBefore( com.stack.newItem(n), get(index) );
-			}
-	
-			function pop( n ){
-				n = n !== undefined ? n : cStack.children.length - 1;
-				if( n > cStack.children.length-1 ){
-					alert("Runtime error: Index out of bounds. ");
-					return null;
-				}
-				var obj 	= get(n);
-				var v		= val( obj );
-				cStack.removeChild( obj );
-				return v;
-			}
-		/****/
 		
-		/** VM Procedures **/
-		this.peek = function(n){
-			if( n > cStack.children.length-1 ){
+		//peek: get the nth element
+		this.peek = function(n){ //TODO: Let this work properly within functions
+			if( n >= cStack.find("tr").length){
 				alert("Runtime error: Index out of bounds. ");
 				return null;
 			}
@@ -335,13 +434,16 @@ var VMCompiler = (function(){
 			return this;
 		}
 		
-		this.poke = function(n){
+		
+		//poke: replace the nth element
+		this.poke = function(n){ //TODO: Let this work properly within functions
 			val( get(n), pop());
 			
 			PC += 2;
 			return this;
 		}
 		
+		//add a constant
 		this.con = function(n){
 			push(n);
 			
@@ -349,8 +451,9 @@ var VMCompiler = (function(){
 			return this;
 		}
 		
+		//add the two top most elements
 		this.add = function(){
-			if( cStack.children.length < 2 ){
+			if( cStack.find("tr").length < 2 ){
 				alert("Runtime error: Not enough elements in stack. ");
 				return null;
 			}
@@ -362,8 +465,9 @@ var VMCompiler = (function(){
 			return this;
 		}
 		
+		//subtract the two top most elements
 		this.sub = function(){
-			if( cStack.children.length < 2 ){
+			if( cStack.find("tr").length < 2 ){
 				alert("Runtime error: Not enough elements in stack. ");
 				return null;
 			}
@@ -375,6 +479,7 @@ var VMCompiler = (function(){
 			return this;
 		}
 		
+		//multiply the two top most elements
 		this.mul = function(){
 			if( cStack.children.length < 2 ){
 				alert("Runtime error: Not enough elements in stack. ");
@@ -388,8 +493,9 @@ var VMCompiler = (function(){
 			return this;
 		}
 		
+		//less or equal
 		this.leq = function(){
-			if( cStack.children.length < 2 ){
+			if( cStack.find("tr").length < 2 ){
 				alert("Runtime error: Not enough elements in stack. ");
 				return null;
 			}
@@ -399,6 +505,7 @@ var VMCompiler = (function(){
 			return this;
 		}
 		
+		//jump
 		this.jp = function(n){
 			if(PC + n < 0 || PC + n >= cInstr.length){
 				alert("Runtime error: Jump index out of bounds. ");
@@ -409,6 +516,7 @@ var VMCompiler = (function(){
 			return this;
 		}
 		
+		//jump if zero
 		this.cjp = function(n){
 			if( pop() == 0 ) return this.jp(n);
 
@@ -416,13 +524,14 @@ var VMCompiler = (function(){
 			return this;
 		}
 		
+		//halt
 		this.halt = function(){
 			PC = -1;
 		}
 
 		//procedures
 
-
+		//proc
 		this.proc = function( a, b ){
 			a = Number( a );
 			b = Number( b );
@@ -430,7 +539,7 @@ var VMCompiler = (function(){
 				alert("Runtime error: The function can't have less than 4 tokens. ");
 			}
 			if( runProc ) {
-				if(cStack.children.length < a){
+				if(cStack.find("tr").length < a){
 					alert("Runtime error: Not enough elements on stack for function call. ");
 					return null;
 				}
@@ -438,7 +547,7 @@ var VMCompiler = (function(){
 				push(framepointer); //old framepointer
 				push(ret); //return adress
 				
-				framepointer = cStack.children.length - 1; //framepointer
+				framepointer = cStack.find("tr").length - 1; //framepointer
 				PC += 3; //jump to function body
 				runProc = false;
 			} else {
@@ -447,6 +556,7 @@ var VMCompiler = (function(){
 			return this;
 		}
 
+		//call a procedure
 		this.call = function(a, b, pgr){
 			ret = PC+2; //Return adress
 			PC = a;
@@ -454,7 +564,9 @@ var VMCompiler = (function(){
 			return this.proc(pgr[PC+1], pgr[PC+2], pgr); //run the procedure
 		}
 
-		this["return"] = function(){
+
+		//return
+		this["return"] = function(){ //TODO: Make this have only one return value
 			
 			var fp = framepointer; //get the frampointer
 			PC = pop(fp--); //jump back
@@ -472,6 +584,7 @@ var VMCompiler = (function(){
 			return this;
 		}
 
+		//arg: Get the ith argument
 		this.arg = function(a){
 			var count = val(get(framepointer-2));
 			if(a <= 0 || a > count){
@@ -479,7 +592,6 @@ var VMCompiler = (function(){
 				return null;
 			}
 			push(val(get(framepointer-2-a))); //get the specefied argument
-			//TODO: Check for size
 			PC += 2;
 			return this;
 		}
@@ -488,105 +600,99 @@ var VMCompiler = (function(){
 	
 })();
 
-
+//represents a stack
 var Stack = (function(){
 	
 	var cls = {
-		main			: 'stack',
-		item			: 'stackItem',
-		input 		: 'input',
-		actions		: 'actions',
-		printMain	: 'stackPrint'
+		main: 'stack',
+		item: 'stackItem',
+		input: 'input',
+		actions: 'actions',
+		printMain: 'stackPrint'
 	}
-	
-	var UID					= 0;
-	var printedStacks		= [];
-	var editableStacks	= [];
-	
-	return function( values ){
 		
+	return function( values ){
 		var cStack	= null;
-		var acc 		= [];
+		var acc = [];
 		
 		/** Private methods **/
 		
+		//Create a new item with value val
 		function newItem( val ){
-			
-			function del(){
-				var s = this.parentNode.parentNode;
-				s.parentNode.removeChild( s );
-			}
-			
-			function add(){
-				var s = this.parentNode.parentNode;
-				s.parentNode.insertBefore( newItem(0), s );
-			}
 			
 			val = val ? val : 0;
 			
-			var wrapper	= element( 'tr' );
-			var obj		= element( 'td', { 'className':cls.item } );
-			var actions	= element( 'td', { 'className':cls.actions } );
+			//Create the cell
+			var wrapper	= $('<tr>');
 			
-			obj.appendChild( element( 'input', {'type':'text', 'value':val, 'className':cls.input} ) );
+			var obj	= $("<td>").addClass(cls.item).appendTo(wrapper)
+			.append(
+				$("<input type='text'>").val(val).addClass(cls.input)
+			);
 			
-			actions.appendChild( element('a', { 'className':'action', 'href':'javascript:void(0)', 'onclick':add }, '+') );
-			actions.appendChild( element('a', { 'className':'action', 'href':'javascript:void(0)', 'onclick':del }, '-') );
+			$("<td>").addClass(cls.actions).appendTo(wrapper).append(
+				$("<a>").addClass("action").attr("href", "javascript:void(0); ").text("+").click(function(){
+					$(this).parent().parent().before(newItem(0));
+				}),
+				$("<a>").addClass("action").attr("href", "javascript:void(0); ").text("-").click(function(){
+					$(this).parent().parent().remove(); 
+				})
+			);
 			
-			wrapper.appendChild( obj );
-			wrapper.appendChild( actions );
-			
-			return wrapper
+			return wrapper;
 		}
 		
-		/** Public methods **/
+		//public wrapper for newItem
+		this.newItem = newItem;
 		
-		this.newItem = function( val ){ return newItem( val ); }
-		
+		//get the values of the stack
 		this.getValues	= function(){
-			var inputs = cStack.getElementsByTagName('input');
-
-			var a = [];
-			for( var i=0; i<inputs.length; ++i ) 
-				if( inputs[0].className.indexOf( cls.input ) > -1 )
-					a.push(inputs[i].value);
-
-			a.reverse();
-			return a;
+			var values = [];
+			
+			cStack.find("input."+cls.input).each(function(i, e){
+				values.push(parseInt($(e).val())); //TODO: Check if invalid
+			});
+			
+			values.reverse();
+			return values;
 		}
 		
+		//print the stack		
 		this.print = function( values, framepointer) {
 			
 			values = values.reverse();
 			
-			var s = element('span', { 'className':cls.printMain });
+			var s = $('<span>').addClass(cls.printMain);
+			
+			//No framepointer
 			if(framepointer != -1){
 				var start = values.length-framepointer-1;
-				var end = start+parseInt(values[values.length-framepointer+1])+3;
+				var end = start+values[values.length-framepointer+1]+3;
 			}
-			for(var i in values){
-				i = parseInt(i);
+			//Framepointer
+			for(var i=0;i<values.length;i++){
 				if(framepointer != -1 && i < end && i >= start){
-					s.appendChild(element('div', {'className':cls.item+" frame"}, values[i])); //Highlight it in some way
+					s.append($('<div>').addClass(cls.item+" frame").text(values[i]));
 				} else {
-					s.appendChild(element('div', {'className':cls.item}, values[i]));
+					s.append($('<div>').addClass(cls.item).text(values[i]));
 				}
 			}
 
-			s.setAttribute('values', '['+values.join(',')+']');
-			
-			return s;
+			return s.data("values", values);
 		}
 		
-		this.editable = function( values ){
-//			if( cStack ) return cStack;
+		//Create an editable stack
+		this.editable = function( values ){			
+			var s = $("<table>")
+			.addClass(cls.main)
+			.css({
+				"cellSpacing":0, 
+				"cellPadding":0
+			});
 			
-			var s = element( 'table', { 'className':cls.main, 'id':'stack_'+UID, 'cellSpacing':0, 'cellPadding':0 } );
-			
-			for( var i in values )
-				s.appendChild( newItem(values[i]) );
-			
-			editableStacks.push( s );
+			for(var i=0;i<values.length;i++){
+				s.append(newItem(values[i]));
+			}
 			
 			cStack = s;
 			
@@ -596,23 +702,3 @@ var Stack = (function(){
 	}
 	
 })();
-
-function element( type, options, html ) {
-	
-	var obj = document.createElement( type );
-	
-	if( options )
-		for( var i in options )
-			obj[i] = options[i];
-			
-	if( html ) obj.innerHTML = html;
-	
-	return obj;
-	
-}
-
-function getEl( id, context ){
-	context = context ? context : document;	
-	 
-	return context.getElementById( id ) 
-}
